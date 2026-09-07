@@ -6,14 +6,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>StadiView. Experience every seat</title>
+    <title>3D Football Stadium</title>
     <meta
       name="description"
       content="Explore a fully procedural 3D football stadium and preview the match from thousands of individual seats."
     />
     <meta name="theme-color" content="#05070d" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="StadiView. Experience every seat" />
+    <meta property="og:title" content="3D Football Stadium" />
     <meta
       property="og:description"
       content="A procedural 3D football stadium seat preview concept."
@@ -1309,7 +1309,7 @@
             opacity=".5"
           />
         </svg>
-        StadiView
+        3D STADIUM
       </div>
       <div class="nav-links">
         <a href="#" class="active">Stadium</a>
@@ -1355,105 +1355,8 @@
             <circle cx="18" cy="21" r="1.4" fill="currentColor" /></svg
           ><span class="badge">2</span>
         </button>
-        <button
-          class="support-btn"
-          id="support-trigger"
-          type="button"
-          aria-haspopup="dialog"
-          aria-controls="support-modal"
-          aria-label="About this project"
-          title="About 3D Stadium"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-          <span>About project</span>
-        </button>
       </div>
     </nav>
-
-    <div id="support-modal" aria-hidden="true">
-      <section
-        class="support-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="support-title"
-        aria-describedby="support-description"
-      >
-        <button
-          class="support-close"
-          id="support-close"
-          type="button"
-          aria-label="Close about message"
-        >
-          ×
-        </button>
-        <div class="support-kicker">🏟️ 3D Football Stadium</div>
-        <h2 id="support-title">Interactive Seat Preview</h2>
-        <p id="support-description">
-          An interactive, procedural 3D football stadium built with Three.js and GSAP. Explore the stadium, select from thousands of generated seats, and preview the match view from any perspective.
-        </p>
-        <div class="support-ideas" aria-label="Features">
-          <span>Real-time seat view</span>
-          <span>Procedural stadium</span>
-          <span>Dynamic lighting</span>
-          <span>Interactive camera</span>
-          <span>Match atmosphere</span>
-        </div>
-        <div class="support-actions">
-          <button class="support-later" id="support-later" type="button">
-            Close
-          </button>
-        </div>
-      </section>
-    </div>
-
-    <section id="match" class="card" aria-label="Upcoming match">
-      <div class="eyebrow">INTERNATIONAL FRIENDLY</div>
-      <div class="teams">
-        <div class="team">
-          <div class="flag arg" role="img" aria-label="Argentina flag"></div>
-          <div class="name">ARGENTINA</div>
-        </div>
-        <div class="vs">VS</div>
-        <div class="team">
-          <div class="flag esp" role="img" aria-label="Spain flag"></div>
-          <div class="name">SPAIN</div>
-        </div>
-      </div>
-      <div class="meta">
-        <div class="row">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="3" y="5" width="18" height="16" rx="2" />
-            <path d="M8 3v4M16 3v4M3 10h18" /></svg
-          >Demo fixture <span class="dot">·</span> 8:30 PM
-        </div>
-        <div class="row">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z" />
-            <circle cx="12" cy="10" r="2.6" /></svg
-          >Metropolitano Stadium, Madrid
-        </div>
-      </div>
-    </section>
 
     <section id="camcard" class="card" aria-label="Camera controls">
       <header>
@@ -1740,51 +1643,7 @@
       ).matches;
       const TAU = Math.PI * 2;
 
-      /* ---------- support modal ---------- */
-      const supportModal = document.getElementById("support-modal");
-      const supportTrigger = document.getElementById("support-trigger");
-      const supportClose = document.getElementById("support-close");
-      const supportLater = document.getElementById("support-later");
-      let supportReturnFocus = null;
 
-      function openSupportModal() {
-        supportReturnFocus = document.activeElement;
-        supportModal.classList.add("show");
-        supportModal.setAttribute("aria-hidden", "false");
-        supportClose.focus();
-      }
-
-      function closeSupportModal() {
-        supportModal.classList.remove("show");
-        supportModal.setAttribute("aria-hidden", "true");
-        if (supportReturnFocus) supportReturnFocus.focus();
-      }
-
-      supportTrigger.addEventListener("click", openSupportModal);
-      supportClose.addEventListener("click", closeSupportModal);
-      supportLater.addEventListener("click", closeSupportModal);
-      supportModal.addEventListener("click", (event) => {
-        if (event.target === supportModal) closeSupportModal();
-      });
-      supportModal.addEventListener("keydown", (event) => {
-        event.stopPropagation();
-        if (event.key === "Escape") {
-          event.preventDefault();
-          closeSupportModal();
-          return;
-        }
-        if (event.key !== "Tab") return;
-        const focusable = [...supportModal.querySelectorAll("a, button")];
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      });
 
       /* ---------- deterministic rng ---------- */
       function mulberry32(a) {
@@ -2290,10 +2149,10 @@
             x.font = "700 40px " + getComputedStyle(document.body).fontFamily;
             x.textBaseline = "middle";
             const words = [
-              "STADIVIEW",
+              "3D STADIUM",
               "EXPERIENCE EVERY SEAT",
               "MATCHDAY LIVE",
-              "ARGENTINA × SPAIN",
+              "HOME × AWAY",
             ];
             let cx = 30;
             for (let i = 0; i < 8; i++) {
@@ -2836,9 +2695,9 @@
             x.textBaseline = "middle";
             let cx = 40;
             const words = [
-              "ARGENTINA VS SPAIN",
-              "INTERNATIONAL FRIENDLY",
-              "METROPOLITANO · MADRID",
+              "MATCHDAY LIVE",
+              "STADIUM PREVIEW",
+              "FOOTBALL ARENA",
               "KICK OFF 8.30 PM",
             ];
             for (let i = 0; i < 8; i++) {
