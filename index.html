@@ -1454,7 +1454,7 @@
           <div class="cell">
             <div class="k">Price</div>
             <div class="v" id="p-price">
-              €168 <span class="unit">/seat</span>
+              ₹43,900 <span class="unit">/seat</span>
             </div>
           </div>
         </div>
@@ -1625,7 +1625,7 @@
 
     <div id="tip" aria-hidden="true">
       <div class="t1" id="tip1">Section · Row · Seat</div>
-      <div class="t2" id="tip2">€ pending</div>
+      <div class="t2" id="tip2">₹ pending</div>
     </div>
     <div id="toast" role="status"></div>
 
@@ -3386,13 +3386,9 @@
         return Math.round(THREE.MathUtils.clamp(99 - dn - mid - hp, 45, 99));
       }
       function seatPrice(i, score) {
-        const t = sections[meta.secIdx[i]].tier;
-        const f = [
-          (s) => 60 + s * 1.16,
-          (s) => 70 + s * 1.3,
-          (s) => 24 + s * 0.75,
-        ][t];
-        return Math.round(f(score));
+        const norm = THREE.MathUtils.clamp((score - 45) / 54, 0, 1);
+        const raw = 2000 + Math.pow(norm, 1.15) * 48000;
+        return Math.round(raw / 100) * 100;
       }
       function scoreLabel(s) {
         return s >= 90
@@ -3649,7 +3645,7 @@
           " · Seat " +
           info.seat;
         ui.tip2.textContent = info.avail
-          ? "€" + info.price + " · " + info.score + "% view"
+          ? "₹" + info.price.toLocaleString("en-IN") + " · " + info.score + "% view"
           : "Unavailable";
         ui.tip2.style.color = info.avail ? "" : "#8a8478";
         ui.tip.style.left =
@@ -3680,7 +3676,7 @@
         ui.pRow.textContent = info.row;
         ui.pSeat.textContent = info.seat;
         ui.pPrice.innerHTML =
-          "€" + info.price + ' <span class="unit">/seat</span>';
+          "₹" + info.price.toLocaleString("en-IN") + ' <span class="unit">/seat</span>';
         ui.pScore.textContent = "★ " + info.score + "% view";
         const b = TIER_BENEFITS[info.sec.tier];
         ui.benefits.forEach((el, k) => (el.textContent = b[k]));
