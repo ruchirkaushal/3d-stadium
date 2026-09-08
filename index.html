@@ -6,39 +6,84 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Football Stadium</title>
+    <title>Football Stadium — Feel Closer to the Game</title>
     <meta
       name="description"
       content="Explore a fully procedural 3D football stadium and preview the match from thousands of individual seats."
     />
-    <meta name="theme-color" content="#05070d" />
+    <meta name="theme-color" content="#0b1220" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="3D Football Stadium" />
+    <meta property="og:title" content="Football Stadium — Feel Closer to the Game" />
     <meta
       property="og:description"
       content="A procedural 3D football stadium seat preview concept."
     />
     <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Inter loads without blocking first paint; the system stack renders meanwhile -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript
+      ><link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    /></noscript>
     <style>
+      /* ==========================================================
+         DESIGN SYSTEM · premium dark glass · sports platform
+         ========================================================== */
       :root {
-        --paper: #f4eee0;
-        --paper-2: #ffffff;
-        --ink: #141414;
-        --dim: #5c564c;
-        --yellow: #ffd23f;
-        --blue: #3d6dff;
-        --green: #2fd573;
-        --pink: #ff5d8f;
-        --cyanink: #39c4ff;
-        --shadow-lg: 7px 7px 0 var(--ink);
-        --shadow-md: 4px 4px 0 var(--ink);
-        --shadow-sm: 2.5px 2.5px 0 var(--ink);
-        --radius: 12px;
+        --bg: #0b1220;
+        --bg-2: #111c2e;
+
+        --glass-1: rgba(10, 20, 35, 0.58);
+        --glass-2: rgba(20, 35, 55, 0.46);
+        --glass-3: rgba(11, 18, 32, 0.74);
+        --glass-hi: rgba(255, 255, 255, 0.06);
+
+        --line: rgba(255, 255, 255, 0.14);
+        --line-soft: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.22);
+
+        --acc: #2f7bff;
+        --acc-soft: rgba(47, 123, 255, 0.16);
+        --acc-mid: rgba(47, 123, 255, 0.32);
+        --acc-glow: rgba(47, 123, 255, 0.35);
+        --live: #20e889;
+
+        --tx: #ffffff;
+        --tx-2: rgba(255, 255, 255, 0.65);
+        --tx-3: rgba(255, 255, 255, 0.42);
+        --tx-4: rgba(255, 255, 255, 0.26);
+
+        --r-xl: 24px;
+        --r-lg: 20px;
+        --r-md: 14px;
+        --r-sm: 10px;
+        --r-pill: 999px;
+
+        --blur: blur(26px) saturate(150%);
+        --blur-sm: blur(16px) saturate(140%);
+
+        --sh: 0 20px 60px rgba(0, 0, 0, 0.42);
+        --sh-sm: 0 10px 30px rgba(0, 0, 0, 0.32);
+
+        --ease: cubic-bezier(0.22, 0.68, 0.24, 1);
+
         --font:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
+          "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           "Helvetica Neue", sans-serif;
         --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+        --nav-h: 74px;
       }
+
       * {
         margin: 0;
         padding: 0;
@@ -48,16 +93,50 @@
       body {
         height: 100%;
         overflow: hidden;
-        background: #05070d;
+        background: var(--bg);
         font-family: var(--font);
-        color: var(--ink);
+        color: var(--tx);
         -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "cv11", "ss01";
       }
+      body {
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      button,
+      input {
+        font-family: inherit;
+        font-size: inherit;
+        color: inherit;
+      }
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--acc);
+        outline-offset: 2px;
+        border-radius: 8px;
+      }
+      svg {
+        display: block;
+      }
+
+      /* ---------- stage ---------- */
       #c {
         position: fixed;
         inset: 0;
+        width: 100vw;
+        height: 100vh;
         display: block;
         cursor: grab;
+        z-index: 0;
       }
       #c.dragging {
         cursor: grabbing;
@@ -65,1564 +144,2488 @@
       #c.seatmode {
         cursor: move;
       }
+
+      /* vignette + legibility scrims, never blocking the pitch centre */
       #vig {
         position: fixed;
         inset: 0;
-        z-index: 4;
+        z-index: 1;
         pointer-events: none;
-        background: radial-gradient(
-          ellipse at 50% 42%,
-          transparent 52%,
-          rgba(2, 4, 9, 0.5) 100%
-        );
+        background:
+          linear-gradient(
+            to bottom,
+            rgba(4, 9, 18, 0.62) 0,
+            rgba(4, 9, 18, 0.16) 12%,
+            transparent 26%
+          ),
+          linear-gradient(
+            to top,
+            rgba(4, 9, 18, 0.58) 0,
+            rgba(4, 9, 18, 0.12) 14%,
+            transparent 28%
+          ),
+          radial-gradient(
+            ellipse 78% 62% at 50% 46%,
+            transparent 55%,
+            rgba(3, 6, 13, 0.5) 100%
+          );
       }
 
-      button {
-        font-family: var(--font);
-        cursor: pointer;
-        border: none;
-        background: none;
-        color: var(--ink);
+      /* ---------- shared glass primitives ---------- */
+      .glass {
+        background: var(--glass-1);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh);
       }
-      button:focus-visible,
-      a:focus-visible {
-        outline: 3px solid var(--blue);
-        outline-offset: 2px;
-        border-radius: 6px;
+      .kicker {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--tx-3);
+      }
+      .sep-v {
+        width: 1px;
+        height: 16px;
+        background: var(--line);
+        flex: none;
       }
 
-      /* neobrutal press physics */
-      .push {
-        transition:
-          transform 0.12s cubic-bezier(0.2, 0.8, 0.4, 1),
-          box-shadow 0.12s cubic-bezier(0.2, 0.8, 0.4, 1);
-      }
-
-      /* ---------- top nav ---------- */
-      nav {
+      .layer {
         position: fixed;
+        z-index: 10;
+      }
+
+      /* ==========================================================
+         TOP NAVIGATION
+         ========================================================== */
+      #topbar {
+        position: fixed;
+        z-index: 20;
         top: 0;
         left: 0;
         right: 0;
-        height: 84px;
-        z-index: 20;
-        display: flex;
+        height: var(--nav-h);
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
         align-items: center;
-        justify-content: space-between;
+        gap: 20px;
         padding: 0 24px;
-        pointer-events: none;
+        background: linear-gradient(
+          to bottom,
+          rgba(8, 15, 27, 0.72),
+          rgba(8, 15, 27, 0.34) 70%,
+          rgba(8, 15, 27, 0)
+        );
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        backdrop-filter: blur(18px) saturate(140%);
+        border-bottom: 1px solid var(--line-soft);
       }
-      nav > * {
-        pointer-events: auto;
-      }
+
       .brand {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 19px;
-        font-weight: 900;
-        letter-spacing: -0.02em;
-        text-transform: uppercase;
-        background: var(--paper);
-        border: 3px solid var(--ink);
-        border-radius: 12px;
-        padding: 9px 16px 9px 12px;
-        box-shadow: var(--shadow-md);
+        gap: 12px;
+        text-decoration: none;
+        color: inherit;
+        justify-self: start;
       }
-      .brand svg {
-        width: 26px;
-        height: 26px;
+      .brand-mark {
+        width: 38px;
+        height: 38px;
+        flex: none;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(
+          160deg,
+          rgba(255, 255, 255, 0.14),
+          rgba(255, 255, 255, 0.04)
+        );
+        border: 1px solid var(--line);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
       }
-      .nav-links {
+      .brand-mark svg {
+        width: 22px;
+        height: 22px;
+      }
+      .brand-tx {
         display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .brand-tx b {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        line-height: 1.1;
+      }
+      .brand-tx span {
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--tx-3);
+      }
+
+      .tabs {
+        display: flex;
+        align-items: center;
         gap: 4px;
+        justify-self: center;
+      }
+      .tab {
+        position: relative;
+        padding: 10px 16px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--tx-2);
+        border-radius: var(--r-sm);
+        transition:
+          color 0.22s var(--ease),
+          background 0.22s var(--ease);
+      }
+      .tab:hover {
+        color: var(--tx);
+        background: var(--glass-hi);
+      }
+      .tab::after {
+        content: "";
         position: absolute;
         left: 50%;
+        bottom: 2px;
+        width: 0;
+        height: 2px;
+        border-radius: 2px;
         transform: translateX(-50%);
-        background: var(--paper);
-        border: 3px solid var(--ink);
-        border-radius: 14px;
-        padding: 5px;
-        box-shadow: var(--shadow-md);
+        background: var(--acc);
+        box-shadow: 0 0 12px 1px var(--acc-glow);
+        transition: width 0.28s var(--ease);
       }
-      .nav-links a {
-        color: var(--ink);
-        text-decoration: none;
-        font-size: 13.5px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        padding: 8px 15px;
-        border-radius: 8px;
-        transition: background 0.15s;
+      .tab.active {
+        color: var(--tx);
       }
-      .nav-links a:hover {
-        background: #e6dfcd;
+      .tab.active::after {
+        width: calc(100% - 26px);
       }
-      .nav-links a.active {
-        background: var(--yellow);
-        border: 2px solid var(--ink);
-        padding: 6px 13px;
-        box-shadow: var(--shadow-sm);
+
+      .top-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-self: end;
       }
-      .nav-actions {
+      #search {
+        position: relative;
         display: flex;
         align-items: center;
         gap: 9px;
+        width: 300px;
+        height: 42px;
+        padding: 0 14px;
+        border-radius: var(--r-pill);
+        background: var(--glass-2);
+        -webkit-backdrop-filter: var(--blur-sm);
+        backdrop-filter: var(--blur-sm);
+        border: 1px solid var(--line);
+        transition:
+          border-color 0.22s var(--ease),
+          box-shadow 0.22s var(--ease);
       }
+      #search svg {
+        width: 16px;
+        height: 16px;
+        flex: none;
+        color: var(--tx-3);
+      }
+      #search:focus-within {
+        border-color: var(--acc-mid);
+        box-shadow: 0 0 0 3px var(--acc-soft);
+      }
+      #q {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        background: none;
+        outline: none;
+        font-size: 12.5px;
+        letter-spacing: 0.01em;
+      }
+      #q::placeholder {
+        color: var(--tx-3);
+      }
+      #q-clear {
+        display: none;
+        width: 18px;
+        height: 18px;
+        flex: none;
+        border-radius: 50%;
+        color: var(--tx-3);
+        place-items: center;
+      }
+      #q-clear svg {
+        width: 11px;
+        height: 11px;
+      }
+      #q-clear:hover {
+        color: var(--tx);
+        background: var(--glass-hi);
+      }
+      #search.filled #q-clear {
+        display: grid;
+      }
+
+      #q-res {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        right: 0;
+        max-height: 296px;
+        overflow-y: auto;
+        padding: 6px;
+        border-radius: var(--r-md);
+        background: var(--glass-3);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh);
+        opacity: 0;
+        transform: translateY(-6px);
+        pointer-events: none;
+        transition:
+          opacity 0.2s var(--ease),
+          transform 0.2s var(--ease);
+      }
+      #q-res.show {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+      }
+      .qr {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 10px;
+        border-radius: var(--r-sm);
+        text-align: left;
+        transition: background 0.16s var(--ease);
+      }
+      .qr:hover {
+        background: var(--acc-soft);
+      }
+      .qr-n {
+        width: 34px;
+        flex: none;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--acc);
+        font-variant-numeric: tabular-nums;
+      }
+      .qr-m {
+        flex: 1;
+        min-width: 0;
+      }
+      .qr-m b {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+      .qr-m span {
+        font-size: 10.5px;
+        color: var(--tx-3);
+      }
+      .qr-p {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--tx-2);
+        font-variant-numeric: tabular-nums;
+      }
+      .q-empty {
+        padding: 14px 12px;
+        font-size: 11.5px;
+        color: var(--tx-3);
+        text-align: center;
+      }
+
       .icon-btn {
         width: 42px;
         height: 42px;
-        border-radius: 11px;
+        flex: none;
         display: grid;
         place-items: center;
-        color: var(--ink);
-        position: relative;
-        background: var(--paper);
-        border: 3px solid var(--ink);
-        box-shadow: var(--shadow-sm);
+        border-radius: 50%;
+        color: var(--tx-2);
+        background: var(--glass-2);
+        -webkit-backdrop-filter: var(--blur-sm);
+        backdrop-filter: var(--blur-sm);
+        border: 1px solid var(--line);
         transition:
-          transform 0.12s,
-          box-shadow 0.12s;
-      }
-      .icon-btn:hover {
-        transform: translate(-1.5px, -1.5px);
-        box-shadow: 4px 4px 0 var(--ink);
-      }
-      .icon-btn:active {
-        transform: translate(2px, 2px);
-        box-shadow: 0.5px 0.5px 0 var(--ink);
+          color 0.2s var(--ease),
+          background 0.2s var(--ease),
+          border-color 0.2s var(--ease);
       }
       .icon-btn svg {
         width: 18px;
         height: 18px;
       }
-      .badge {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        background: var(--pink);
-        color: var(--ink);
-        font-size: 11px;
-        font-weight: 900;
-        min-width: 20px;
-        height: 20px;
-        border-radius: 10px;
-        display: grid;
-        place-items: center;
-        padding: 0 5px;
-        border: 2px solid var(--ink);
-      }
-      .avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 11px;
-        margin-left: 2px;
-        background: var(--blue);
-        border: 3px solid var(--ink);
-        display: grid;
-        place-items: center;
-        font-size: 13px;
-        font-weight: 900;
-        color: #fff;
-        box-shadow: var(--shadow-sm);
-      }
-      .support-btn {
-        height: 42px;
-        margin-left: 2px;
-        padding: 0 14px 0 11px;
-        border-radius: 11px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--ink);
-        background: var(--yellow);
-        border: 3px solid var(--ink);
-        box-shadow: var(--shadow-sm);
-        text-decoration: none;
-        font-size: 12px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.035em;
-        white-space: nowrap;
-        transition:
-          transform 0.12s,
-          box-shadow 0.12s;
-      }
-      .support-btn:hover {
-        transform: translate(-1.5px, -1.5px);
-        box-shadow: 4px 4px 0 var(--ink);
-      }
-      .support-btn:active {
-        transform: translate(2px, 2px);
-        box-shadow: 0.5px 0.5px 0 var(--ink);
-      }
-      .support-btn svg {
-        width: 18px;
-        height: 18px;
-        flex: none;
+      .icon-btn:hover {
+        color: var(--tx);
+        background: rgba(47, 123, 255, 0.18);
+        border-color: var(--acc-mid);
       }
 
-      /* ---------- support modal ---------- */
-      #support-modal {
+      /* ==========================================================
+         LEFT FLOATING RAIL
+         ========================================================== */
+      #rail {
+        /* above #scrim (28) so switching modes always works, even with a
+           sheet open; the sheets never overlap the rail's column */
         position: fixed;
-        inset: 0;
-        z-index: 70;
-        display: grid;
-        place-items: center;
-        padding: 22px;
-        background: rgba(2, 4, 9, 0.72);
-        backdrop-filter: blur(7px);
-        -webkit-backdrop-filter: blur(7px);
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition:
-          opacity 0.22s ease,
-          visibility 0.22s ease;
+        z-index: 32;
+        left: 24px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 110px;
+        padding: 9px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        border-radius: var(--r-xl);
+        background: var(--glass-1);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh);
       }
-      #support-modal.show {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-      }
-      .support-dialog {
+      .rail-btn {
         position: relative;
-        width: min(590px, 100%);
-        max-height: min(760px, calc(100svh - 44px));
-        overflow-y: auto;
-        padding: 31px;
-        background: var(--paper);
-        border: 3px solid var(--ink);
-        border-radius: 16px;
-        box-shadow: 9px 9px 0 var(--ink);
-        transform: translateY(16px) rotate(-0.4deg) scale(0.98);
-        transition: transform 0.24s cubic-bezier(0.2, 0.9, 0.25, 1);
-      }
-      #support-modal.show .support-dialog {
-        transform: translateY(0) rotate(-0.4deg) scale(1);
-      }
-      .support-close {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        width: 38px;
-        height: 38px;
-        display: grid;
-        place-items: center;
-        border: 2.5px solid var(--ink);
-        border-radius: 9px;
-        background: var(--paper-2);
-        box-shadow: var(--shadow-sm);
-        font-size: 23px;
-        font-weight: 800;
-        line-height: 1;
-      }
-      .support-close:hover {
-        background: var(--pink);
-      }
-      .support-kicker {
-        display: inline-flex;
+        display: flex;
+        flex-direction: column;
         align-items: center;
         gap: 7px;
-        margin: 0 48px 14px 0;
-        padding: 6px 9px;
-        color: var(--ink);
-        background: var(--yellow);
-        border: 2px solid var(--ink);
-        border-radius: 7px;
-        box-shadow: var(--shadow-sm);
-        font-size: 10.5px;
-        font-weight: 900;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
+        padding: 13px 4px 11px;
+        border-radius: var(--r-md);
+        color: var(--tx-2);
+        border: 1px solid transparent;
+        transition:
+          color 0.24s var(--ease),
+          background 0.24s var(--ease),
+          border-color 0.24s var(--ease),
+          box-shadow 0.24s var(--ease);
       }
-      .support-dialog h2 {
-        max-width: 480px;
-        margin: 0 0 15px;
-        color: var(--ink);
-        font-size: clamp(27px, 5vw, 39px);
-        line-height: 0.98;
-        letter-spacing: -0.045em;
+      .rail-btn svg {
+        width: 21px;
+        height: 21px;
       }
-      .support-dialog p {
-        color: var(--dim);
-        font-size: 14.5px;
-        font-weight: 650;
-        line-height: 1.55;
+      .rail-btn span {
+        font-size: 11.5px;
+        font-weight: 500;
+        letter-spacing: 0.01em;
       }
-      .support-dialog p + p {
-        margin-top: 12px;
+      .rail-btn:hover {
+        color: var(--tx);
+        background: var(--glass-hi);
       }
-      .support-ideas {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 7px;
-        margin: 19px 0;
-      }
-      .support-ideas span {
-        padding: 7px 9px;
-        color: var(--ink);
-        background: var(--paper-2);
-        border: 2px solid var(--ink);
-        border-radius: 7px;
-        font-family: var(--mono);
-        font-size: 10.5px;
-        font-weight: 800;
-        box-shadow: 2px 2px 0 var(--ink);
-      }
-      .support-note {
-        padding: 12px 13px;
-        color: var(--ink) !important;
-        background: #fff8dc;
-        border-left: 4px solid var(--yellow);
-        border-radius: 0 8px 8px 0;
-      }
-      .support-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 22px;
-      }
-      .support-later {
-        min-height: 46px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 3px solid var(--ink);
-        border-radius: 9px;
-        font-size: 12px;
-        font-weight: 900;
-        letter-spacing: 0.035em;
-        text-transform: uppercase;
-        text-decoration: none;
-        flex: 1;
-        padding: 0 17px;
-        color: var(--ink);
-        background: var(--yellow);
-        box-shadow: var(--shadow-md);
-        cursor: pointer;
-      }
-      .support-later:hover {
-        transform: translate(-1.5px, -1.5px);
-        box-shadow: 6px 6px 0 var(--ink);
+      .rail-btn.active {
+        color: var(--tx);
+        background: linear-gradient(
+          170deg,
+          rgba(47, 123, 255, 0.32),
+          rgba(47, 123, 255, 0.16)
+        );
+        border-color: rgba(47, 123, 255, 0.42);
+        box-shadow:
+          0 0 22px var(--acc-glow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.14);
       }
 
-      /* ---------- card base ---------- */
-      .card {
+      /* ==========================================================
+         RIGHT SEAT PANEL
+         ========================================================== */
+      #seatcard {
         position: fixed;
         z-index: 15;
-        background: var(--paper);
-        border: 3px solid var(--ink);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow-lg);
+        right: 24px;
+        top: 98px;
+        width: 342px;
+        max-height: calc(100vh - 190px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 16px 16px 18px;
+        border-radius: var(--r-xl);
+        background: var(--glass-1);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow:
+          var(--sh),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 0 44px -18px var(--acc-glow);
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
       }
-      .card-title {
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: 0.1em;
-        color: var(--ink);
-        text-transform: uppercase;
+      #seatcard::-webkit-scrollbar {
+        width: 5px;
+      }
+      #seatcard::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.16);
+        border-radius: 4px;
       }
 
-      /* ---------- match card ---------- */
-      #match {
-        top: 100px;
-        left: 26px;
-        width: 302px;
-        padding: 18px 20px 20px;
-      }
-      #match .eyebrow {
-        display: inline-block;
-        font-size: 10.5px;
-        font-weight: 900;
-        letter-spacing: 0.1em;
-        color: var(--ink);
-        background: var(--yellow);
-        border: 2px solid var(--ink);
-        border-radius: 7px;
-        padding: 4px 9px;
-        box-shadow: var(--shadow-sm);
-        transform: rotate(-2deg);
-        margin-bottom: 16px;
-      }
-      .teams {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-      }
-      .team {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 9px;
-        width: 96px;
-      }
-      .team .name {
-        font-size: 12px;
-        font-weight: 900;
-        letter-spacing: 0.05em;
-      }
-      .flag {
-        width: 74px;
-        height: 50px;
-        border-radius: 7px;
-        position: relative;
-        overflow: hidden;
-        border: 2.5px solid var(--ink);
-        box-shadow: var(--shadow-sm);
-      }
-      .flag.arg {
-        background: linear-gradient(
-          180deg,
-          #74acdf 33.3%,
-          #fff 33.3% 66.6%,
-          #74acdf 66.6%
-        );
-      }
-      .flag.arg::after {
-        content: "";
+      #fav {
         position: absolute;
-        left: 50%;
-        top: 50%;
-        width: 12px;
-        height: 12px;
-        margin: -6px 0 0 -6px;
+        top: 18px;
+        right: 18px;
+        z-index: 3;
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
         border-radius: 50%;
-        background: #f6b40e;
-        border: 1.5px solid #b8860b;
-      }
-      .flag.esp {
-        background: linear-gradient(
-          180deg,
-          #aa151b 25%,
-          #f1bf00 25% 75%,
-          #aa151b 75%
-        );
-      }
-      .vs {
-        font-size: 18px;
-        font-weight: 900;
-        font-family: var(--mono);
-      }
-      #match .meta {
-        border-top: 2.5px solid var(--ink);
-        padding-top: 13px;
-        display: flex;
-        flex-direction: column;
-        gap: 9px;
-      }
-      #match .meta .row {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        font-size: 13.5px;
-        font-weight: 600;
-        color: var(--ink);
-      }
-      #match .meta svg {
-        width: 15px;
-        height: 15px;
-        color: var(--ink);
-        flex: none;
-      }
-      #match .meta .dot {
-        color: var(--dim);
-        margin: 0 2px;
-      }
-
-      /* ---------- camera controls ---------- */
-      #camcard {
-        bottom: 26px;
-        left: 26px;
-        width: 302px;
-        padding: 15px 17px 13px;
-      }
-      #camcard header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 11px;
-      }
-      #camcard .help {
-        width: 25px;
-        height: 25px;
-        border-radius: 8px;
-        border: 2.5px solid var(--ink);
-        color: var(--ink);
-        font-size: 13px;
-        font-weight: 900;
-        display: grid;
-        place-items: center;
-        background: var(--paper-2);
-        box-shadow: var(--shadow-sm);
+        color: var(--tx-2);
+        background: rgba(8, 14, 26, 0.55);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--line);
         transition:
-          transform 0.12s,
-          box-shadow 0.12s;
+          color 0.2s var(--ease),
+          background 0.2s var(--ease),
+          border-color 0.2s var(--ease),
+          transform 0.2s var(--ease);
       }
-      #camcard .help:hover {
-        transform: translate(-1px, -1px);
-        box-shadow: 3.5px 3.5px 0 var(--ink);
-      }
-      .cam-body {
-        display: flex;
-        gap: 11px;
-        align-items: stretch;
-      }
-      #mm {
-        width: 200px;
-        height: 126px;
-        border-radius: 8px;
-        background: #0b1020;
-        border: 2.5px solid var(--ink);
-      }
-      .cam-btns {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        flex: 1;
-      }
-      .sq-btn {
-        flex: 1;
-        min-height: 34px;
-        border-radius: 9px;
-        border: 2.5px solid var(--ink);
-        background: var(--paper-2);
-        display: grid;
-        place-items: center;
-        color: var(--ink);
-        font-size: 18px;
-        font-weight: 900;
-        box-shadow: var(--shadow-sm);
-        transition:
-          transform 0.12s,
-          box-shadow 0.12s;
-      }
-      .sq-btn:hover {
-        transform: translate(-1.5px, -1.5px);
-        box-shadow: 4px 4px 0 var(--ink);
-      }
-      .sq-btn:active {
-        transform: translate(2px, 2px);
-        box-shadow: 0.5px 0.5px 0 var(--ink);
-      }
-      .sq-btn svg {
+      #fav svg {
         width: 16px;
         height: 16px;
       }
-      #camcard footer {
-        margin-top: 11px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 11.5px;
-        font-weight: 700;
-        color: var(--dim);
+      #fav:hover {
+        color: var(--tx);
+        transform: scale(1.06);
       }
-      #camcard footer svg {
-        width: 13px;
-        height: 13px;
-        flex: none;
+      #fav.on {
+        color: #ff5f7e;
+        border-color: rgba(255, 95, 126, 0.45);
+        background: rgba(255, 95, 126, 0.16);
+      }
+      #fav.on svg path {
+        fill: currentColor;
       }
 
-      /* ---------- right column ---------- */
-      #rightcol {
-        position: fixed;
-        top: 100px;
-        right: 26px;
-        bottom: 26px;
-        width: 336px;
-        z-index: 15;
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-        overflow-y: auto;
-        scrollbar-width: none;
-        pointer-events: none;
-        padding-left: 10px;
-        padding-bottom: 10px;
-      }
-      #rightcol::-webkit-scrollbar {
+      #card-toggle {
+        /* only ever shown on small screens, where the panel is a bottom sheet */
         display: none;
+        position: absolute;
+        top: 18px;
+        right: 60px;
+        z-index: 3;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 50%;
+        color: var(--tx-2);
+        background: rgba(8, 14, 26, 0.55);
+        border: 1px solid var(--line);
       }
-      #rightcol .card {
-        position: relative;
-        top: auto;
-        right: auto;
-        flex: none;
-        pointer-events: auto;
+      #card-toggle svg {
+        width: 14px;
+        height: 14px;
+        transition: transform 0.26s var(--ease);
+      }
+      #seatcard.collapsed #card-toggle svg {
+        transform: rotate(180deg);
       }
 
-      #overview {
-        padding: 15px 17px;
-      }
-      #overview header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 11px;
-      }
-      #overview .expand {
-        width: 26px;
-        height: 26px;
-        border-radius: 8px;
-        color: var(--ink);
-        border: 2.5px solid var(--ink);
-        background: var(--paper-2);
-        display: grid;
-        place-items: center;
-        box-shadow: var(--shadow-sm);
-        transition:
-          transform 0.12s,
-          box-shadow 0.12s;
-      }
-      #overview .expand:hover {
-        transform: translate(-1px, -1px);
-        box-shadow: 3.5px 3.5px 0 var(--ink);
-      }
-      #overview .expand svg {
-        width: 13px;
-        height: 13px;
+      .mm-wrap {
+        position: relative;
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        background: radial-gradient(
+          ellipse at 50% 45%,
+          #101d31 0%,
+          #0a1322 74%,
+          #070e19 100%
+        );
+        border: 1px solid var(--line-soft);
+        box-shadow: inset 0 0 34px rgba(0, 0, 0, 0.55);
       }
       #ov {
-        width: 100%;
-        height: 150px;
-        border-radius: 8px;
         display: block;
-        background: #0b1020;
-        border: 2.5px solid var(--ink);
+        width: 100%;
+        height: auto;
       }
-
-      #seatcard {
-        padding: 18px 20px;
-        display: flex;
-        flex-direction: column;
-      }
-      #seatcard header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-      }
-      #seatcard .label {
+      .mm-tag {
+        position: absolute;
+        left: 10px;
+        bottom: 9px;
         display: flex;
         align-items: center;
         gap: 6px;
-        font-size: 10.5px;
-        font-weight: 900;
-        letter-spacing: 0.08em;
-        color: var(--ink);
-        background: var(--yellow);
-        border: 2px solid var(--ink);
-        border-radius: 7px;
         padding: 4px 9px;
-        box-shadow: var(--shadow-sm);
-        transform: rotate(-1.5deg);
+        border-radius: var(--r-pill);
+        background: rgba(6, 11, 20, 0.62);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--tx-3);
+        pointer-events: none;
       }
-      #seatcard .label svg {
-        width: 12px;
-        height: 12px;
+      .mm-tag i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--acc);
+        box-shadow: 0 0 8px 1px var(--acc-glow);
       }
-      #fav {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
-        color: var(--ink);
-        border: 2.5px solid var(--ink);
-        background: var(--paper-2);
-        display: grid;
-        place-items: center;
-        box-shadow: var(--shadow-sm);
-        transition:
-          transform 0.12s,
-          box-shadow 0.12s,
-          background 0.15s;
-      }
-      #fav:hover {
-        transform: translate(-1px, -1px);
-        box-shadow: 3.5px 3.5px 0 var(--ink);
-      }
-      #fav svg {
-        width: 17px;
-        height: 17px;
-      }
-      #fav.on {
-        background: var(--pink);
-      }
-      #fav.on svg path {
-        fill: var(--ink);
+
+      #p-label {
+        margin: 16px 0 6px;
       }
       #p-section {
         font-size: 27px;
-        font-weight: 900;
-        letter-spacing: -0.01em;
-        text-transform: uppercase;
-        margin-bottom: 4px;
+        font-weight: 700;
+        letter-spacing: -0.018em;
+        line-height: 1.1;
       }
       #p-sub {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--dim);
-        margin-bottom: 14px;
+        margin-top: 4px;
+        font-size: 12.5px;
+        color: var(--tx-2);
       }
       #p-sub .dot {
-        margin: 0 6px;
+        margin: 0 7px;
+        color: var(--tx-4);
       }
-      .seat-grid {
+
+      .stats {
         display: grid;
-        grid-template-columns: 1fr 1fr 1.35fr;
-        gap: 8px;
-        margin-bottom: 14px;
-        border: 2.5px solid var(--ink);
-        border-radius: 9px;
-        background: var(--paper-2);
-        padding: 11px 13px;
+        grid-template-columns: repeat(3, 1fr);
+        margin-top: 16px;
+        padding: 13px 4px;
+        border-top: 1px solid var(--line-soft);
+        border-bottom: 1px solid var(--line-soft);
       }
-      .seat-grid .cell .k {
-        font-size: 10.5px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        color: var(--dim);
-        margin-bottom: 3px;
+      .stats .cell {
+        padding: 0 10px;
       }
-      .seat-grid .cell .v {
-        font-size: 21px;
-        font-weight: 800;
-        font-family: var(--mono);
+      .stats .cell + .cell {
+        border-left: 1px solid var(--line-soft);
       }
-      .seat-grid .cell:last-child {
-        text-align: right;
-      }
-      #p-price .unit {
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--dim);
-        font-family: var(--font);
-      }
-      .preview {
-        position: relative;
-        border-radius: 9px;
-        overflow: hidden;
-        margin-bottom: 14px;
-        background: #0b1020;
-        border: 2.5px solid var(--ink);
-        aspect-ratio: 16/9.6;
-      }
-      .preview img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+      .stats .k {
         display: block;
-        opacity: 0;
-        transition: opacity 0.5s;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--tx-3);
       }
-      .preview img.ready {
-        opacity: 1;
+      .stats .v {
+        display: block;
+        margin-top: 4px;
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
       }
-      .preview .ph {
-        position: absolute;
-        inset: 0;
+      .stats .cell:last-child .v {
+        font-size: 17px;
+      }
+
+      .score {
+        margin-top: 15px;
+      }
+      .score-row {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .score-row .lb {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--tx-2);
+      }
+      .score-i {
+        width: 15px;
+        height: 15px;
         display: grid;
         place-items: center;
-        font-size: 12px;
+        border-radius: 50%;
+        color: var(--tx-3);
+        border: 1px solid var(--line);
+      }
+      .score-i svg {
+        width: 9px;
+        height: 9px;
+      }
+      .score-i:hover {
+        color: var(--tx);
+        border-color: var(--line-strong);
+      }
+      #p-score {
+        margin-left: auto;
+        font-size: 17px;
         font-weight: 700;
-        color: #8b95a7;
+        color: var(--live);
+        font-variant-numeric: tabular-nums;
       }
-      .pill {
-        position: absolute;
-        padding: 4px 9px;
-        border-radius: 7px;
-        background: var(--paper);
-        font-size: 11px;
-        font-weight: 900;
-        border: 2px solid var(--ink);
-        box-shadow: var(--shadow-sm);
+      .bar {
+        margin-top: 9px;
+        height: 6px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
       }
-      .pill.tl {
-        top: 9px;
-        left: 9px;
-        background: var(--yellow);
+      .bar i {
+        display: block;
+        height: 100%;
+        width: 0;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--acc), var(--live));
+        box-shadow: 0 0 12px var(--acc-glow);
+        transition: width 0.7s var(--ease);
       }
-      .pill.br {
-        bottom: 9px;
-        right: 9px;
-      }
-      .benefits {
+
+      .chips {
         display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 15px;
       }
-      .benefit {
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        font-size: 13.5px;
-        font-weight: 700;
-      }
-      .benefit .bicon {
-        width: 17px;
-        height: 17px;
-        color: var(--ink);
-        flex: none;
-      }
-      .benefit .spacer {
-        flex: 1;
-      }
-      .benefit .check {
-        width: 20px;
-        height: 20px;
-        flex: none;
-        color: var(--green);
-      }
-      .benefit .check circle {
-        opacity: 1;
-        stroke: var(--ink);
-        stroke-width: 1.6;
-      }
-      .benefit .check path {
-        stroke: var(--ink);
-      }
-      #checkout {
-        height: 52px;
-        border-radius: 11px;
-        background: var(--yellow);
-        color: var(--ink);
-        border: 3px solid var(--ink);
-        font-size: 15px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
+      .chip {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 10px;
-        box-shadow: 5px 5px 0 var(--ink);
-        transition:
-          transform 0.12s,
-          box-shadow 0.12s,
-          background 0.2s;
+        gap: 5px;
+        padding: 5px 9px;
+        border-radius: var(--r-pill);
+        font-size: 10.5px;
+        font-weight: 500;
+        color: var(--tx-2);
+        background: var(--glass-hi);
+        border: 1px solid var(--line-soft);
       }
-      #checkout:hover {
-        transform: translate(-2px, -2px);
-        box-shadow: 7px 7px 0 var(--ink);
-      }
-      #checkout:active {
-        transform: translate(2.5px, 2.5px);
-        box-shadow: 1px 1px 0 var(--ink);
-      }
-      #checkout svg {
-        width: 17px;
-        height: 17px;
-      }
-      #checkout.done {
-        background: var(--green);
-      }
-      #checkout.done:hover {
-        transform: none;
-        box-shadow: 5px 5px 0 var(--ink);
-        cursor: default;
-      }
-      .secure {
-        margin-top: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 7px;
-        font-size: 11.5px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--dim);
-      }
-      .secure svg {
+      .chip svg {
         width: 12px;
         height: 12px;
+        flex: none;
+        color: var(--acc);
       }
-      @keyframes cardrefresh {
+
+      #viewseat {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        height: 50px;
+        margin-top: 17px;
+        border-radius: var(--r-md);
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: #fff;
+        background: linear-gradient(180deg, #3d87ff, #2264e6);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow:
+          0 12px 30px -8px var(--acc-glow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        transition:
+          transform 0.2s var(--ease),
+          box-shadow 0.24s var(--ease),
+          filter 0.2s var(--ease);
+      }
+      #viewseat svg {
+        width: 17px;
+        height: 17px;
+        transition: transform 0.24s var(--ease);
+      }
+      #viewseat:hover {
+        filter: brightness(1.08);
+        box-shadow:
+          0 16px 40px -8px rgba(47, 123, 255, 0.55),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+      #viewseat:hover svg {
+        transform: translateX(4px);
+      }
+      #viewseat:active {
+        transform: translateY(1px);
+      }
+      #viewseat[disabled] {
+        opacity: 0.45;
+        pointer-events: none;
+      }
+
+      .card-note {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 11px;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--tx-4);
+      }
+      .card-note svg {
+        width: 11px;
+        height: 11px;
+      }
+
+      @keyframes panelrefresh {
         from {
-          opacity: 0.55;
-          transform: translateY(8px) rotate(0.4deg);
+          opacity: 0.42;
+          transform: translateY(5px);
         }
         to {
           opacity: 1;
           transform: none;
         }
       }
-      #seatcard.refresh {
-        animation: cardrefresh 0.5s cubic-bezier(0.2, 0.85, 0.3, 1);
+      #seatcard.refresh .card-body {
+        animation: panelrefresh 0.4s var(--ease);
       }
 
-      /* ---------- bottom dock ---------- */
+      /* ==========================================================
+         BOTTOM · zoom dock / status / view tools
+         ========================================================== */
       #dock {
         position: fixed;
-        bottom: 26px;
-        left: 50%;
-        transform: translateX(-50%);
         z-index: 15;
+        left: 50%;
+        bottom: 26px;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        transition:
+          opacity 0.3s var(--ease),
+          transform 0.34s var(--ease);
+      }
+      #dock.hidden {
+        opacity: 0;
+        transform: translate(-50%, 18px);
+        pointer-events: none;
+      }
+      .zoom-pill {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px;
+        border-radius: var(--r-pill);
+        background: var(--glass-1);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh);
+      }
+      .zbtn {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        font-size: 19px;
+        font-weight: 500;
+        color: var(--tx-2);
+        transition:
+          color 0.18s var(--ease),
+          background 0.18s var(--ease);
+      }
+      .zbtn:hover {
+        color: var(--tx);
+        background: var(--glass-hi);
+      }
+      .zbtn:active {
+        background: var(--acc-soft);
+      }
+      #d-3d {
+        width: auto;
+        min-width: 66px;
+        height: 42px;
+        border-radius: var(--r-pill);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: var(--tx);
+        background: var(--glass-hi);
+        border: 1px solid var(--line-soft);
+      }
+      #d-3d:hover {
+        background: rgba(47, 123, 255, 0.2);
+        border-color: var(--acc-mid);
+      }
+      .hintline {
         display: flex;
         align-items: center;
         gap: 7px;
-        padding: 8px;
-        border-radius: 14px;
-        background: var(--paper);
-        border: 3px solid var(--ink);
-        box-shadow: var(--shadow-lg);
-        transition:
-          transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1),
-          opacity 0.35s;
+        font-size: 11px;
+        color: var(--tx-3);
+        text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
       }
-      #dock.hidden {
-        transform: translateX(-50%) translateY(120px);
-        opacity: 0;
-        pointer-events: none;
-      }
-      .dock-btn {
-        height: 42px;
-        min-width: 46px;
-        padding: 0 13px;
-        border-radius: 9px;
-        display: grid;
-        place-items: center;
-        color: var(--ink);
-        font-size: 14px;
-        font-weight: 900;
-        border: 2.5px solid transparent;
-        transition:
-          background 0.15s,
-          border-color 0.15s;
-      }
-      .dock-btn:hover {
-        background: #e6dfcd;
-      }
-      .dock-btn.active {
-        background: var(--blue);
-        color: #fff;
-        border-color: var(--ink);
-        box-shadow: var(--shadow-sm);
-      }
-      .dock-btn svg {
-        width: 19px;
-        height: 19px;
-      }
-      .dock-sep {
-        width: 2.5px;
-        height: 26px;
-        background: var(--ink);
-        border-radius: 2px;
+      .hintline svg {
+        width: 15px;
+        height: 15px;
       }
 
-      /* ---------- seat mode: back pill ---------- */
-      #backbar {
+      #statuspill,
+      #viewtools {
         position: fixed;
+        z-index: 15;
         bottom: 26px;
-        left: 50%;
-        transform: translateX(-50%) translateY(120px);
-        z-index: 16;
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 8px;
-        border-radius: 14px;
-        background: var(--paper);
-        border: 3px solid var(--ink);
-        box-shadow: var(--shadow-lg);
+        gap: 12px;
+        height: 44px;
+        padding: 0 16px;
+        border-radius: var(--r-pill);
+        background: var(--glass-1);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh);
+      }
+      #statuspill {
+        left: 24px;
+      }
+      #viewtools {
+        right: 24px;
+      }
+      .live {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .live i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--live);
+        box-shadow: 0 0 10px 1px rgba(32, 232, 137, 0.7);
+        animation: livepulse 2.4s ease-in-out infinite;
+      }
+      @keyframes livepulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+      .loc {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        color: var(--tx-2);
+        white-space: nowrap;
+      }
+      .loc svg {
+        width: 13px;
+        height: 13px;
+        flex: none;
+        color: var(--tx-3);
+      }
+      .vt {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--tx-2);
+        white-space: nowrap;
+      }
+      .vt svg {
+        width: 15px;
+        height: 15px;
+        flex: none;
+        color: var(--tx-3);
+      }
+      #btn-full {
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        color: var(--tx-2);
+        transition:
+          color 0.18s var(--ease),
+          background 0.18s var(--ease);
+      }
+      #btn-full svg {
+        width: 15px;
+        height: 15px;
+      }
+      #btn-full:hover {
+        color: var(--tx);
+        background: var(--glass-hi);
+      }
+
+      /* ==========================================================
+         SEAT VIEW (first person) chrome
+         ========================================================== */
+      #seatbadge {
+        position: fixed;
+        z-index: 18;
+        top: 22px;
+        left: 50%;
+        transform: translate(-50%, -14px);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 46px;
+        padding: 0 18px;
+        border-radius: var(--r-pill);
+        background: var(--glass-3);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow:
+          var(--sh),
+          0 0 34px -14px var(--acc-glow);
         opacity: 0;
         pointer-events: none;
         transition:
-          transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1),
-          opacity 0.35s;
+          opacity 0.34s var(--ease),
+          transform 0.34s var(--ease);
+      }
+      #seatbadge.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      #seatbadge .sv-k {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--acc);
+      }
+      #seatbadge .sv-k i {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--acc);
+        box-shadow: 0 0 9px 1px var(--acc-glow);
+      }
+      #sv-line {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      }
+
+      #backbar {
+        position: fixed;
+        z-index: 18;
+        left: 50%;
+        bottom: 26px;
+        transform: translate(-50%, 18px);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px;
+        border-radius: var(--r-pill);
+        background: var(--glass-1);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.32s var(--ease),
+          transform 0.32s var(--ease);
       }
       #backbar.show {
-        transform: translateX(-50%) translateY(0);
         opacity: 1;
+        transform: translate(-50%, 0);
         pointer-events: auto;
       }
       #bk-exit {
-        height: 42px;
-        padding: 0 18px 0 14px;
-        border-radius: 9px;
         display: flex;
         align-items: center;
         gap: 9px;
-        color: var(--ink);
-        font-size: 13.5px;
-        font-weight: 900;
+        height: 42px;
+        padding: 0 18px;
+        border-radius: var(--r-pill);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.11em;
         text-transform: uppercase;
-        letter-spacing: 0.03em;
-      }
-      #bk-exit:hover {
-        background: #e6dfcd;
+        color: var(--tx);
+        background: var(--glass-hi);
+        border: 1px solid var(--line-soft);
+        transition:
+          background 0.2s var(--ease),
+          border-color 0.2s var(--ease);
       }
       #bk-exit svg {
-        width: 17px;
-        height: 17px;
+        width: 16px;
+        height: 16px;
+        transition: transform 0.24s var(--ease);
+      }
+      #bk-exit:hover {
+        background: rgba(255, 255, 255, 0.11);
+        border-color: var(--line);
+      }
+      #bk-exit:hover svg {
+        transform: translateX(-3px);
+      }
+      #checkout {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        height: 42px;
+        padding: 0 20px;
+        border-radius: var(--r-pill);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: #fff;
+        background: linear-gradient(180deg, #3d87ff, #2264e6);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow:
+          0 10px 26px -8px var(--acc-glow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.26);
+        transition:
+          filter 0.2s var(--ease),
+          background 0.3s var(--ease);
+      }
+      #checkout svg {
+        width: 16px;
+        height: 16px;
+      }
+      #checkout:hover {
+        filter: brightness(1.08);
+      }
+      #checkout.done {
+        background: linear-gradient(180deg, #23e58c, #12b96c);
+        box-shadow:
+          0 10px 26px -8px rgba(32, 232, 137, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.26);
       }
       #bk-snd {
         width: 42px;
         height: 42px;
-        border-radius: 9px;
         display: grid;
         place-items: center;
-        color: var(--ink);
-        border: 2.5px solid var(--ink);
-        background: var(--paper-2);
-        box-shadow: var(--shadow-sm);
-      }
-      #bk-snd:hover {
-        background: #fff;
+        border-radius: 50%;
+        color: var(--tx-2);
+        background: var(--glass-hi);
+        border: 1px solid var(--line-soft);
+        transition:
+          color 0.2s var(--ease),
+          background 0.2s var(--ease);
       }
       #bk-snd svg {
-        width: 18px;
-        height: 18px;
+        width: 17px;
+        height: 17px;
       }
+      #bk-snd:hover {
+        color: var(--tx);
+        background: rgba(255, 255, 255, 0.11);
+      }
+
       #sb-hint {
         position: fixed;
-        bottom: 94px;
+        z-index: 17;
         left: 50%;
-        transform: translateX(-50%);
-        z-index: 16;
+        bottom: 98px;
+        transform: translate(-50%, 8px);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 15px;
+        border-radius: var(--r-pill);
         font-size: 11.5px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--ink);
-        background: var(--paper);
-        border: 2px solid var(--ink);
-        border-radius: 8px;
-        padding: 6px 12px;
-        box-shadow: var(--shadow-sm);
+        color: var(--tx-2);
+        background: rgba(8, 14, 26, 0.6);
+        -webkit-backdrop-filter: var(--blur-sm);
+        backdrop-filter: var(--blur-sm);
+        border: 1px solid var(--line-soft);
         opacity: 0;
-        transition: opacity 0.5s;
         pointer-events: none;
+        transition:
+          opacity 0.34s var(--ease),
+          transform 0.34s var(--ease);
+      }
+      #sb-hint svg {
+        width: 13px;
+        height: 13px;
+        color: var(--tx-3);
       }
       #sb-hint.show {
         opacity: 1;
+        transform: translate(-50%, 0);
       }
 
-      /* ---------- tooltip / toast / loader ---------- */
-      #tip {
+      /* stadium-mode chrome retreats during seat view */
+      body.seatview #rail,
+      body.seatview #seatcard,
+      body.seatview #statuspill,
+      body.seatview #viewtools,
+      body.seatview #topbar {
+        opacity: 0;
+        pointer-events: none;
+      }
+      body.seatview #topbar {
+        transform: translateY(-14px);
+      }
+      body.seatview #rail {
+        transform: translate(-24px, -50%);
+      }
+      body.seatview #seatcard {
+        transform: translateX(24px);
+      }
+      #topbar,
+      #rail,
+      #seatcard,
+      #statuspill,
+      #viewtools {
+        transition:
+          opacity 0.34s var(--ease),
+          transform 0.4s var(--ease);
+      }
+
+      /* ==========================================================
+         SHEETS · gallery / info / seat explorer
+         ========================================================== */
+      #scrim {
+        position: fixed;
+        inset: 0;
+        z-index: 28;
+        background: rgba(4, 8, 16, 0.5);
+        -webkit-backdrop-filter: blur(3px);
+        backdrop-filter: blur(3px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s var(--ease);
+      }
+      #scrim.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .sheet {
         position: fixed;
         z-index: 30;
-        pointer-events: none;
-        background: var(--paper);
-        border: 2.5px solid var(--ink);
-        border-radius: 9px;
-        padding: 8px 12px;
-        font-size: 12px;
-        box-shadow: var(--shadow-md);
+        display: none;
+        flex-direction: column;
+        border-radius: var(--r-xl);
+        background: var(--glass-3);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow:
+          var(--sh),
+          inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      }
+      .sheet.show {
+        display: flex;
+      }
+      .sheet-hd {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 20px 14px;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .sheet-hd h2 {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .sheet-hd .sub {
+        font-size: 11px;
+        color: var(--tx-3);
+        margin-top: 2px;
+      }
+      .sheet-x {
+        margin-left: auto;
+        width: 30px;
+        height: 30px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        color: var(--tx-2);
+        border: 1px solid var(--line-soft);
+        transition:
+          color 0.18s var(--ease),
+          background 0.18s var(--ease);
+      }
+      .sheet-x svg {
+        width: 13px;
+        height: 13px;
+      }
+      .sheet-x:hover {
+        color: var(--tx);
+        background: var(--glass-hi);
+      }
+      .sheet-bd {
+        padding: 16px 20px 20px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+      }
+      .sheet-bd::-webkit-scrollbar {
+        width: 5px;
+      }
+      .sheet-bd::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.16);
+        border-radius: 4px;
+      }
+
+      /* -- seat explorer (docked beside the rail) -- */
+      #sheet-seats {
+        left: 162px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 340px;
+        max-height: min(620px, calc(100vh - 190px));
+      }
+      .tier-tabs {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 14px;
+      }
+      .tier-tab {
+        flex: 1;
+        padding: 8px 6px;
+        border-radius: var(--r-sm);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--tx-2);
+        background: var(--glass-hi);
+        border: 1px solid var(--line-soft);
+        transition:
+          color 0.2s var(--ease),
+          background 0.2s var(--ease),
+          border-color 0.2s var(--ease);
+      }
+      .tier-tab:hover {
+        color: var(--tx);
+      }
+      .tier-tab.active {
+        color: var(--tx);
+        background: rgba(47, 123, 255, 0.26);
+        border-color: rgba(47, 123, 255, 0.42);
+        box-shadow: 0 0 16px -4px var(--acc-glow);
+      }
+      .sec-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+      }
+      .sec-btn {
+        padding: 9px 4px 8px;
+        border-radius: var(--r-sm);
+        text-align: center;
+        background: var(--glass-hi);
+        border: 1px solid var(--line-soft);
+        transition:
+          background 0.18s var(--ease),
+          border-color 0.18s var(--ease),
+          transform 0.18s var(--ease);
+      }
+      .sec-btn b {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .sec-btn span {
+        display: block;
+        margin-top: 1px;
+        font-size: 9.5px;
+        color: var(--tx-3);
+        font-variant-numeric: tabular-nums;
+      }
+      .sec-btn:hover {
+        background: rgba(47, 123, 255, 0.2);
+        border-color: var(--acc-mid);
+        transform: translateY(-1px);
+      }
+      .sec-btn.on {
+        background: rgba(47, 123, 255, 0.32);
+        border-color: rgba(47, 123, 255, 0.5);
+        box-shadow: 0 0 18px -4px var(--acc-glow);
+      }
+      .sec-btn.soldout {
+        opacity: 0.34;
+      }
+      .explore-note {
+        margin: 0 0 12px;
+        font-size: 11px;
+        color: var(--tx-3);
+      }
+      #best-seat {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        width: 100%;
+        height: 42px;
+        margin-top: 12px;
+        border-radius: var(--r-md);
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--tx);
+        background: var(--glass-hi);
+        border: 1px solid var(--line);
+        transition:
+          background 0.2s var(--ease),
+          border-color 0.2s var(--ease);
+      }
+      #best-seat svg {
+        width: 15px;
+        height: 15px;
+        color: var(--acc);
+      }
+      #best-seat:hover {
+        background: rgba(47, 123, 255, 0.2);
+        border-color: var(--acc-mid);
+      }
+
+      /* -- gallery -- */
+      #sheet-gallery {
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(880px, calc(100vw - 220px));
+        max-height: min(700px, calc(100vh - 150px));
+      }
+      .gal-hero {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        background: #0a1220;
+        border: 1px solid var(--line-soft);
+      }
+      .gal-hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
         opacity: 0;
-        transition: opacity 0.12s;
-        white-space: nowrap;
-        transform: translate(16px, 16px);
+        transition: opacity 0.5s var(--ease);
+      }
+      .gal-hero img.ready {
+        opacity: 1;
+      }
+      .gal-hero .ph {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--tx-3);
+      }
+      .gal-cap {
+        position: absolute;
+        left: 14px;
+        bottom: 14px;
+        right: 14px;
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+        pointer-events: none;
+      }
+      .gal-cap b {
+        font-size: 17px;
+        font-weight: 700;
+        text-shadow: 0 2px 14px rgba(0, 0, 0, 0.8);
+      }
+      .gal-cap span {
+        font-size: 11.5px;
+        color: var(--tx-2);
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+      }
+      .gal-badge {
+        margin-left: auto;
+        padding: 5px 11px;
+        border-radius: var(--r-pill);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        background: rgba(8, 14, 26, 0.66);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--line);
+      }
+      #gal-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        gap: 9px;
+        margin-top: 14px;
+      }
+      .gal-thumb {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        border-radius: var(--r-md);
+        overflow: hidden;
+        background: #0a1220;
+        border: 1px solid var(--line-soft);
+        transition:
+          border-color 0.2s var(--ease),
+          transform 0.2s var(--ease),
+          box-shadow 0.2s var(--ease);
+      }
+      .gal-thumb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .gal-thumb .tl {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 16px 8px 8px;
+        text-align: left;
+        font-size: 10.5px;
+        font-weight: 600;
+        background: linear-gradient(to top, rgba(4, 8, 16, 0.9), transparent);
+      }
+      .gal-thumb:hover {
+        border-color: var(--acc-mid);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px -10px var(--acc-glow);
+      }
+      .gal-thumb.on {
+        border-color: var(--acc);
+        box-shadow: 0 0 0 1px var(--acc);
+      }
+      .gal-empty {
+        margin-top: 14px;
+        padding: 22px;
+        border-radius: var(--r-md);
+        text-align: center;
+        font-size: 11.5px;
+        color: var(--tx-3);
+        border: 1px dashed var(--line-soft);
+      }
+
+      /* -- info -- */
+      #sheet-info {
+        left: 162px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 380px;
+        max-height: min(640px, calc(100vh - 190px));
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .info-stat {
+        padding: 12px 13px;
+        border-radius: var(--r-md);
+        background: var(--glass-hi);
+        border: 1px solid var(--line-soft);
+      }
+      .info-stat .k {
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--tx-3);
+      }
+      .info-stat .v {
+        margin-top: 4px;
+        font-size: 18px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .info-h {
+        margin: 18px 0 9px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--tx-3);
+      }
+      .info-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .info-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 2px;
+        font-size: 12px;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .info-row:last-child {
+        border-bottom: none;
+      }
+      .info-row .n {
+        color: var(--tx-2);
+      }
+      .info-row .d {
+        margin-left: auto;
+        font-weight: 600;
+        text-align: right;
+      }
+      .info-row kbd {
+        display: inline-block;
+        min-width: 20px;
+        padding: 2px 6px;
+        border-radius: 5px;
+        font-family: var(--font);
+        font-size: 10.5px;
+        font-weight: 600;
+        text-align: center;
+        background: var(--glass-hi);
+        border: 1px solid var(--line);
+      }
+      .info-p {
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: var(--tx-2);
+      }
+
+      /* ==========================================================
+         TOOLTIP · TOAST · LOADER
+         ========================================================== */
+      #tip {
+        position: fixed;
+        z-index: 40;
+        left: 0;
+        top: 0;
+        padding: 9px 13px;
+        border-radius: var(--r-md);
+        background: rgba(8, 14, 26, 0.82);
+        -webkit-backdrop-filter: var(--blur-sm);
+        backdrop-filter: var(--blur-sm);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh-sm);
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(14px, -50%);
+        transition: opacity 0.16s var(--ease);
       }
       #tip .t1 {
-        color: var(--ink);
-        font-weight: 700;
-        margin-bottom: 3px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
       }
       #tip .t2 {
-        font-size: 14px;
-        font-weight: 900;
-        font-family: var(--mono);
-        color: var(--blue);
+        margin-top: 2px;
+        font-size: 11px;
+        color: var(--acc);
+        font-weight: 600;
+        white-space: nowrap;
       }
+
       #toast {
         position: fixed;
-        top: 100px;
+        z-index: 50;
         left: 50%;
-        transform: translateX(-50%) translateY(-12px);
-        z-index: 40;
-        background: var(--paper);
-        border: 3px solid var(--ink);
-        border-radius: 10px;
+        bottom: 126px;
+        transform: translate(-50%, 14px);
+        max-width: min(460px, calc(100vw - 48px));
         padding: 12px 20px;
-        font-size: 13.5px;
-        font-weight: 800;
+        border-radius: var(--r-pill);
+        font-size: 12.5px;
+        font-weight: 500;
+        text-align: center;
+        color: var(--tx);
+        background: rgba(8, 14, 26, 0.8);
+        -webkit-backdrop-filter: var(--blur);
+        backdrop-filter: var(--blur);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh);
         opacity: 0;
-        transition:
-          opacity 0.3s,
-          transform 0.3s;
         pointer-events: none;
-        box-shadow: var(--shadow-md);
+        transition:
+          opacity 0.28s var(--ease),
+          transform 0.28s var(--ease);
       }
       #toast.show {
         opacity: 1;
-        transform: translateX(-50%) translateY(0);
+        transform: translate(-50%, 0);
       }
+
       #loader {
         position: fixed;
+        z-index: 100;
         inset: 0;
-        z-index: 50;
-        background: var(--paper);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        display: grid;
+        place-content: center;
+        justify-items: center;
         gap: 20px;
-        transition: opacity 0.7s;
-        background-image: radial-gradient(
-          rgba(20, 20, 20, 0.12) 1.5px,
-          transparent 1.5px
-        );
-        background-size: 22px 22px;
+        background:
+          radial-gradient(
+            ellipse at 50% 40%,
+            #14243c 0%,
+            #0b1220 60%,
+            #060b14 100%
+          );
+        transition:
+          opacity 0.7s var(--ease),
+          visibility 0.7s;
       }
       #loader.hide {
         opacity: 0;
-        pointer-events: none;
+        visibility: hidden;
       }
       #loader svg {
-        width: 56px;
-        height: 56px;
-        padding: 12px;
-        background: #fff;
-        border: 3px solid var(--ink);
-        border-radius: 14px;
-        box-shadow: var(--shadow-md);
-        animation: pulse 1.6s ease-in-out infinite;
+        width: 46px;
+        height: 46px;
+        animation: loaderspin 2.6s linear infinite;
+      }
+      @keyframes loaderspin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #loader .lname {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
       }
       #loader .lt {
-        font-size: 13px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--ink);
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+        color: var(--tx-3);
       }
-      @keyframes pulse {
-        0%,
-        100% {
-          transform: scale(0.96) rotate(-1deg);
+      #loader .lbar {
+        width: 190px;
+        height: 3px;
+        border-radius: 3px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.09);
+      }
+      #loader .lbar i {
+        display: block;
+        width: 40%;
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, transparent, var(--acc), transparent);
+        animation: lslide 1.5s var(--ease) infinite;
+      }
+      @keyframes lslide {
+        0% {
+          transform: translateX(-100%);
         }
-        50% {
-          transform: scale(1.02) rotate(1deg);
+        100% {
+          transform: translateX(350%);
         }
       }
 
-      @media (max-width: 1180px) {
-        #match,
-        #overview {
-          display: none;
+      /* ==========================================================
+         RESPONSIVE
+         ========================================================== */
+      @media (max-width: 1320px) {
+        #seatcard {
+          width: 330px;
         }
-        #rightcol {
-          top: auto;
-          bottom: 0;
-          right: 0;
-          left: 0;
-          width: auto;
-          max-height: 46vh;
-          padding: 0 14px 90px;
+        #search {
+          width: 232px;
         }
-        #camcard {
-          display: none;
-        }
-        .nav-links {
-          display: none;
+        #sheet-gallery {
+          width: calc(100vw - 200px);
         }
       }
-      @media (max-width: 650px) {
-        nav {
-          height: 76px;
+
+      @media (max-width: 1120px) {
+        .tab {
+          padding: 10px 11px 12px;
+          font-size: 11px;
+        }
+        #search {
+          width: 180px;
+        }
+        #seatcard {
+          width: 312px;
+          top: 96px;
+        }
+        #rail {
+          width: 96px;
+        }
+        .rail-btn span {
+          font-size: 10.5px;
+        }
+        #sheet-seats,
+        #sheet-info {
+          left: 132px;
+          width: 300px;
+        }
+      }
+
+      /* short desktop viewports: tighten the panel's rhythm so the whole card
+         still fits without scrolling, rather than dropping any of its content */
+      @media (min-width: 901px) and (max-height: 810px) {
+        #seatcard {
+          top: 92px;
+          max-height: calc(100vh - 152px);
+          padding: 14px 14px 15px;
+        }
+        #p-label {
+          margin: 12px 0 5px;
+        }
+        #p-section {
+          font-size: 24px;
+        }
+        .stats {
+          margin-top: 12px;
+          padding: 10px 4px;
+        }
+        .stats .v {
+          font-size: 18px;
+        }
+        .score,
+        .chips {
+          margin-top: 12px;
+        }
+        #viewseat {
+          height: 46px;
+          margin-top: 13px;
+        }
+        .card-note {
+          margin-top: 9px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        :root {
+          --nav-h: 62px;
+        }
+        #topbar {
+          grid-template-columns: 1fr auto;
           padding: 0 14px;
+          gap: 10px;
         }
-        .brand {
-          padding-right: 12px;
-          font-size: 16px;
-        }
-        .nav-actions .icon-btn {
+        .tabs {
           display: none;
         }
-        .support-btn {
+        .brand-tx span {
+          display: none;
+        }
+        .brand-mark {
+          width: 32px;
+          height: 32px;
+        }
+        #search {
           width: 42px;
           padding: 0;
           justify-content: center;
+          cursor: pointer;
         }
-        .support-btn span {
+        #search #q,
+        #search #q-clear {
+          display: none;
+        }
+        #search.open {
           position: absolute;
-          width: 1px;
-          height: 1px;
-          padding: 0;
-          margin: -1px;
-          overflow: hidden;
-          clip: rect(0, 0, 0, 0);
-          white-space: nowrap;
-          border: 0;
+          top: 10px;
+          left: 14px;
+          right: 14px;
+          width: auto;
+          height: 42px;
+          padding: 0 14px;
+          justify-content: flex-start;
         }
-        #support-modal {
-          padding: 14px;
+        #search.open #q {
+          display: block;
         }
-        .support-dialog {
-          max-height: calc(100svh - 28px);
-          padding: 25px 20px 21px;
-          box-shadow: 6px 6px 0 var(--ink);
+        #search.open.filled #q-clear {
+          display: grid;
         }
-        .support-dialog h2 {
-          padding-right: 20px;
+
+        /* rail becomes a bottom tab bar */
+        #rail {
+          left: 12px;
+          right: 12px;
+          top: auto;
+          bottom: 12px;
+          transform: none;
+          width: auto;
+          flex-direction: row;
+          padding: 6px;
+          border-radius: var(--r-lg);
         }
-        .support-actions {
-          align-items: stretch;
+        .rail-btn {
+          flex: 1;
           flex-direction: column;
+          gap: 4px;
+          padding: 8px 2px 7px;
         }
-        .support-later {
-          width: 100%;
+        .rail-btn svg {
+          width: 18px;
+          height: 18px;
+        }
+        .rail-btn span {
+          font-size: 9.5px;
+        }
+        body.seatview #rail {
+          transform: translateY(24px);
+        }
+
+        /* seat panel becomes a bottom sheet above the tab bar */
+        #seatcard {
+          left: 12px;
+          right: 12px;
+          top: auto;
+          bottom: 92px;
+          width: auto;
+          max-height: 58vh;
+          padding: 14px 14px 16px;
+          border-radius: var(--r-lg);
+        }
+        body.seatview #seatcard {
+          transform: translateY(24px);
+        }
+        #seatcard.collapsed {
+          max-height: none;
+          overflow: visible;
+        }
+        #seatcard.collapsed .mm-wrap,
+        #seatcard.collapsed .chips,
+        #seatcard.collapsed .card-note {
+          display: none;
+        }
+        #seatcard.collapsed #p-label {
+          margin-top: 0;
+        }
+        /* clear the heart + toggle buttons once the minimap is gone */
+        #seatcard.collapsed #p-label,
+        #seatcard.collapsed #p-section,
+        #seatcard.collapsed #p-sub {
+          padding-right: 86px;
+        }
+        #card-toggle {
+          display: grid;
+        }
+        .mm-wrap {
+          max-height: 30vh;
+        }
+        #p-section {
+          font-size: 22px;
+        }
+
+        /* bottom chrome tightens up */
+        #dock {
+          bottom: auto;
+          top: calc(var(--nav-h) + 12px);
+          gap: 6px;
+        }
+        .hintline {
+          display: none;
+        }
+        .zbtn,
+        #d-3d {
+          width: 38px;
+          height: 38px;
+        }
+        #d-3d {
+          width: auto;
+          min-width: 54px;
+        }
+        #statuspill {
+          left: 12px;
+          bottom: auto;
+          top: calc(var(--nav-h) + 12px);
+          height: 36px;
+          padding: 0 12px;
+          gap: 9px;
+        }
+        #statuspill .loc,
+        #statuspill .sep-v {
+          display: none;
+        }
+        #viewtools {
+          right: 12px;
+          bottom: auto;
+          top: calc(var(--nav-h) + 12px);
+          height: 36px;
+          padding: 0 10px;
+        }
+        #viewtools .vt,
+        #viewtools .sep-v {
+          display: none;
+        }
+
+        #backbar {
+          bottom: 16px;
+          flex-wrap: nowrap;
+        }
+        #bk-exit,
+        #checkout {
+          height: 38px;
+          padding: 0 14px;
+          font-size: 11px;
+        }
+        #bk-snd {
+          width: 38px;
+          height: 38px;
+        }
+        #sb-hint {
+          bottom: 68px;
+          font-size: 10.5px;
+        }
+        #seatbadge {
+          top: calc(var(--nav-h) + 10px);
+          height: 40px;
+          padding: 0 14px;
+          gap: 10px;
+          max-width: calc(100vw - 24px);
+        }
+        #sv-line {
+          font-size: 11.5px;
+        }
+        #toast {
+          top: calc(var(--nav-h) + 60px);
+          bottom: auto;
+          transform: translate(-50%, -10px);
+        }
+        #toast.show {
+          transform: translate(-50%, 0);
+        }
+
+        /* sheets go full-width */
+        .sheet {
+          left: 12px !important;
+          right: 12px;
+          top: auto !important;
+          bottom: 92px;
+          transform: none !important;
+          width: auto !important;
+          max-height: 62vh;
+        }
+        #gal-strip {
+          grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+        }
+        .info-grid {
+          grid-template-columns: 1fr 1fr;
         }
       }
+
+      @media (max-width: 560px) {
+        .sec-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        #seatcard {
+          max-height: 54vh;
+        }
+        .stats .cell {
+          padding: 0 6px;
+        }
+        .stats .v {
+          font-size: 16px;
+        }
+        .stats .cell:last-child .v {
+          font-size: 14px;
+        }
+        #tip {
+          display: none;
+        }
+      }
+
       @media (prefers-reduced-motion: reduce) {
-        * {
-          transition-duration: 0.01ms !important;
+        *,
+        *::before,
+        *::after {
           animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
         }
       }
     </style>
   </head>
   <body>
+    <!-- ============ icon sprite (thin, minimal, monochrome) ============ -->
+    <svg
+      style="position: absolute; width: 0; height: 0; overflow: hidden"
+      aria-hidden="true"
+    >
+      <defs>
+        <g id="i-ball">
+          <circle cx="12" cy="12" r="9.2" />
+          <path d="M12 5.2l3.1 2.3-1.2 3.7h-3.8L8.9 7.5 12 5.2Z" />
+          <path d="M8.9 7.5 5.1 8.9M15.1 7.5l3.8 1.4M10.1 11.2 7.4 16M13.9 11.2 16.6 16M7.4 16h9.2" />
+        </g>
+        <g id="i-compass">
+          <circle cx="12" cy="12" r="9" />
+          <path d="m14.9 9.1-1.6 4.2-4.2 1.6 1.6-4.2 4.2-1.6Z" />
+        </g>
+        <g id="i-seat">
+          <path d="M7 11.5V7.2A2.2 2.2 0 0 1 9.2 5h5.6A2.2 2.2 0 0 1 17 7.2v4.3" />
+          <path
+            d="M4.8 13.4a1.9 1.9 0 0 1 1.9-1.9h10.6a1.9 1.9 0 0 1 1.9 1.9v2.8a1.9 1.9 0 0 1-1.9 1.9H6.7a1.9 1.9 0 0 1-1.9-1.9v-2.8Z"
+          />
+          <path d="M7.6 18.1V20M16.4 18.1V20" />
+        </g>
+        <g id="i-image">
+          <rect x="3.4" y="4.8" width="17.2" height="14.4" rx="2.4" />
+          <circle cx="8.6" cy="9.9" r="1.5" />
+          <path d="m3.6 16.6 4.3-3.7 3.6 3.1 3.3-3.3 5.6 4.9" />
+        </g>
+        <g id="i-info">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 10.7v6M12 7.6h.01" />
+        </g>
+        <g id="i-search">
+          <circle cx="10.8" cy="10.8" r="6.6" />
+          <path d="m19.6 19.6-4.1-4.1" />
+        </g>
+        <g id="i-user">
+          <circle cx="12" cy="8.4" r="3.7" />
+          <path d="M4.9 20c.5-3.6 3.5-5.9 7.1-5.9s6.6 2.3 7.1 5.9" />
+        </g>
+        <g id="i-heart">
+          <path
+            d="M12 20.1c-1-.7-7.7-4.9-9.3-9C1.5 7.6 3.5 4.6 6.8 4.6c2 0 3.5 1.1 4.3 2.6l.9 1.6.9-1.6c.8-1.5 2.3-2.6 4.3-2.6 3.3 0 5.3 3 3.9 6.5-1.6 4.1-8.3 8.3-9.1 9Z"
+          />
+        </g>
+        <g id="i-arrow-r"><path d="M4.5 12h14M13 6.2l5.8 5.8-5.8 5.8" /></g>
+        <g id="i-arrow-l"><path d="M19.5 12h-14M11 6.2 5.2 12l5.8 5.8" /></g>
+        <g id="i-mouse">
+          <rect x="7.8" y="3.4" width="8.4" height="17.2" rx="4.2" />
+          <path d="M12 7v3.2" />
+        </g>
+        <g id="i-pin">
+          <path d="M12 21c3.6-4.4 5.6-7.4 5.6-10.1A5.6 5.6 0 0 0 6.4 10.9C6.4 13.6 8.4 16.6 12 21Z" />
+          <circle cx="12" cy="10.6" r="2.2" />
+        </g>
+        <g id="i-full">
+          <path d="M14.6 3.8h5.6v5.6M9.4 20.2H3.8v-5.6M20.2 3.8l-6.5 6.5M3.8 20.2l6.5-6.5" />
+        </g>
+        <g id="i-sound">
+          <path d="M4.4 9.2v5.6h3.4l4.4 3.4V5.8L7.8 9.2H4.4Z" />
+          <path d="M15.6 8.9a4.4 4.4 0 0 1 0 6.2M18.3 6.2a8.2 8.2 0 0 1 0 11.6" />
+        </g>
+        <g id="i-x"><path d="M6.2 6.2l11.6 11.6M17.8 6.2 6.2 17.8" /></g>
+        <g id="i-chev"><path d="m6.5 9.5 5.5 5.5 5.5-5.5" /></g>
+        <g id="i-check"><path d="m5.2 12.6 4.4 4.4 9.2-9.6" /></g>
+        <g id="i-spark">
+          <path d="M12 4.2l1.9 4.5 4.5 1.9-4.5 1.9L12 17l-1.9-4.5L5.6 10.6l4.5-1.9L12 4.2Z" />
+        </g>
+        <g id="i-eye">
+          <path d="M2.6 12S6 6.4 12 6.4 21.4 12 21.4 12 18 17.6 12 17.6 2.6 12 2.6 12Z" />
+          <circle cx="12" cy="12" r="2.9" />
+        </g>
+        <g id="i-cup">
+          <path
+            d="M4.6 7.6a1.8 1.8 0 0 1 1.8-1.8h11.2a1.8 1.8 0 0 1 1.8 1.8v1.3a2.3 2.3 0 0 0 0 4.6v1.3a1.8 1.8 0 0 1-1.8 1.8H6.4a1.8 1.8 0 0 1-1.8-1.8v-1.3a2.3 2.3 0 0 0 0-4.6V7.6Z"
+          />
+          <path d="M13 5.8v11.8" stroke-dasharray="2.4 2.4" />
+        </g>
+        <g id="i-lock">
+          <rect x="4.6" y="10.2" width="14.8" height="9.4" rx="2.2" />
+          <path d="M8.4 10.2V7.6a3.6 3.6 0 0 1 7.2 0v2.6" />
+        </g>
+        <g id="i-target">
+          <circle cx="12" cy="12" r="8.4" />
+          <circle cx="12" cy="12" r="3.4" />
+          <path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4" />
+        </g>
+      </defs>
+    </svg>
+
+    <!-- ============ loader ============ -->
     <div id="loader" aria-live="polite">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M12 2 21 7l-9 5-9-5 9-5Z" fill="#2f9bff" />
-        <path d="M3 12l9 5 9-5" stroke="#39c4ff" stroke-width="1.6" />
-        <path
-          d="M3 17l9 5 9-5"
-          stroke="#39c4ff"
-          stroke-width="1.6"
-          opacity=".5"
-        />
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2f7bff" stroke-width="1.5">
+        <use href="#i-ball" />
       </svg>
+      <div class="lname">Football Stadium</div>
+      <div class="lbar"><i></i></div>
       <div class="lt" id="loader-text">Building the stadium…</div>
     </div>
 
+    <!-- ============ 3D stage ============ -->
     <canvas
       id="c"
       aria-label="Interactive 3D stadium. Click any seat to preview its view."
     ></canvas>
     <div id="vig" aria-hidden="true"></div>
 
-    <nav>
-      <div class="brand">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M12 2 21 7l-9 5-9-5 9-5Z" fill="#2f9bff" />
-          <path d="M3 12l9 5 9-5" stroke="#39c4ff" stroke-width="1.6" />
-          <path
-            d="M3 17l9 5 9-5"
-            stroke="#39c4ff"
-            stroke-width="1.6"
-            opacity=".5"
+    <!-- ============ top navigation ============ -->
+    <header id="topbar">
+      <a class="brand" href="#" aria-label="Football Stadium home">
+        <span class="brand-mark">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#e8f2ff"
+            stroke-width="1.4"
+            stroke-linejoin="round"
+          >
+            <use href="#i-ball" />
+          </svg>
+        </span>
+        <span class="brand-tx">
+          <b>Football Stadium</b>
+          <span>Feel closer to the game</span>
+        </span>
+      </a>
+
+      <nav class="tabs" aria-label="Sections">
+        <button class="tab active" data-tab="stadium">Stadium</button>
+        <button class="tab" data-tab="tickets">Tickets</button>
+        <button class="tab" data-tab="teams">Teams</button>
+        <button class="tab" data-tab="experience">Experience</button>
+      </nav>
+
+      <div class="top-right">
+        <div id="search" role="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <use href="#i-search" />
+          </svg>
+          <input
+            id="q"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Search section, row, or seat..."
+            aria-label="Search section, row, or seat"
           />
+          <button id="q-clear" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <use href="#i-x" />
+            </svg>
+          </button>
+          <div id="q-res" role="listbox" aria-label="Search results"></div>
+        </div>
+        <button class="icon-btn" id="user-btn" aria-label="Account">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <use href="#i-user" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ============ left floating rail ============ -->
+    <nav id="rail" aria-label="Stadium modes">
+      <button class="rail-btn active" id="nav-explore" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+          <use href="#i-compass" />
         </svg>
-        3D STADIUM
-      </div>
-      <div class="nav-links">
-        <a href="#" class="active">Stadium</a>
-        <a href="#">Experience</a>
-        <a href="#">Tickets</a>
-        <a href="#">Teams</a>
-      </div>
-      <div class="nav-actions">
-        <button class="icon-btn" aria-label="Search">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-        </button>
-        <button class="icon-btn" aria-label="Favorites">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path
-              d="M12 20.5s-7.5-4.7-9.3-9.3C1.3 7.6 3.6 4.5 6.9 4.5c2 0 3.6 1.1 4.4 2.7l.7 1.4.7-1.4c.8-1.6 2.4-2.7 4.4-2.7 3.3 0 5.6 3.1 4.2 6.7-1.8 4.6-9.3 9.3-9.3 9.3Z"
-            />
-          </svg>
-        </button>
-        <button class="icon-btn" aria-label="Cart, 2 items">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path
-              d="M3 4h2l2.4 12.2A2 2 0 0 0 9.4 18h8.9a2 2 0 0 0 2-1.6L22 8H6"
-            />
-            <circle cx="10" cy="21" r="1.4" fill="currentColor" />
-            <circle cx="18" cy="21" r="1.4" fill="currentColor" /></svg
-          ><span class="badge">2</span>
-        </button>
-      </div>
+        <span>Explore</span>
+      </button>
+      <button class="rail-btn" id="nav-seats" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+          <use href="#i-seat" />
+        </svg>
+        <span>Seats</span>
+      </button>
+      <button class="rail-btn" id="nav-gallery" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+          <use href="#i-image" />
+        </svg>
+        <span>Gallery</span>
+      </button>
+      <button class="rail-btn" id="nav-info" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <use href="#i-info" />
+        </svg>
+        <span>Info</span>
+      </button>
     </nav>
 
-    <section id="camcard" class="card" aria-label="Camera controls">
-      <header>
-        <div class="card-title">Camera Controls</div>
-        <button class="help" id="cc-help" aria-label="Controls help">?</button>
-      </header>
-      <div class="cam-body">
-        <canvas id="mm" width="400" height="252" aria-hidden="true"></canvas>
-        <div class="cam-btns">
-          <button class="sq-btn" id="cc-reset" aria-label="Reset camera">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M20 11a8 8 0 1 0-2.3 5.7" />
-              <path d="M20 4v7h-7" />
-            </svg>
-          </button>
-          <button class="sq-btn" id="cc-zin" aria-label="Zoom in">+</button>
-          <button class="sq-btn" id="cc-zout" aria-label="Zoom out">−</button>
-        </div>
-      </div>
-      <footer>
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path
-            d="M9 11.2V7a3 3 0 0 1 6 0v4.2M7 11h10l-.8 8.2a2 2 0 0 1-2 1.8H9.8a2 2 0 0 1-2-1.8L7 11Z"
-          />
+    <!-- ============ right seat panel ============ -->
+    <aside id="seatcard" aria-label="Selected seat">
+      <button id="fav" aria-label="Save seat to favourites" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+          <use href="#i-heart" />
         </svg>
-        Click and drag to rotate <span style="margin: 0 4px">·</span> Scroll to
-        zoom
-      </footer>
-    </section>
+      </button>
+      <button id="card-toggle" aria-label="Collapse seat panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <use href="#i-chev" />
+        </svg>
+      </button>
 
-    <div id="rightcol">
-      <section id="overview" class="card" aria-label="Stadium overview">
-        <header>
-          <div class="card-title">Stadium Overview</div>
-          <button class="expand" id="ov-expand" aria-label="Reset to full view">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-            </svg>
-          </button>
-        </header>
-        <canvas id="ov" width="596" height="300"></canvas>
-      </section>
+      <div class="card-body">
+        <div class="mm-wrap">
+          <canvas id="ov" width="660" height="382" aria-hidden="true"></canvas>
+          <div class="mm-tag"><i></i>Your section</div>
+        </div>
 
-      <section id="seatcard" class="card" aria-label="Selected seat">
-        <header>
-          <div class="label">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="m12 2 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 16.9l-6.1 3.5 1.5-6.8L2.2 9l6.9-.7L12 2Z"
-              /></svg
-            ><span id="p-label">SELECTED SEAT</span>
-          </div>
-          <button id="fav" aria-label="Save seat to favorites">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                d="M12 20.5s-7.5-4.7-9.3-9.3C1.3 7.6 3.6 4.5 6.9 4.5c2 0 3.6 1.1 4.4 2.7l.7 1.4.7-1.4c.8-1.6 2.4-2.7 4.4-2.7 3.3 0 5.6 3.1 4.2 6.7-1.8 4.6-9.3 9.3-9.3 9.3Z"
-              />
-            </svg>
-          </button>
-        </header>
-        <div id="p-section">Section 125</div>
+        <div id="p-label" class="kicker">Suggested seat</div>
+        <h1 id="p-section">Section 125</h1>
         <div id="p-sub">
           <span id="p-tier">Lower Tier</span><span class="dot">·</span
           ><span id="p-block">Block 125</span>
         </div>
-        <div class="seat-grid">
+
+        <div class="stats">
           <div class="cell">
-            <div class="k">Row</div>
-            <div class="v" id="p-row">12</div>
-          </div>
-          <div class="cell">
-            <div class="k">Seat</div>
-            <div class="v" id="p-seat">18</div>
+            <span class="k">Row</span><span class="v" id="p-row">12</span>
           </div>
           <div class="cell">
-            <div class="k">Price</div>
-            <div class="v" id="p-price">
-              ₹43,900 <span class="unit">/seat</span>
-            </div>
+            <span class="k">Seat</span><span class="v" id="p-seat">18</span>
+          </div>
+          <div class="cell">
+            <span class="k">Price</span><span class="v" id="p-price">₹43,900</span>
           </div>
         </div>
-        <div class="preview">
-          <img id="p-img" alt="View from the selected seat" />
-          <div class="ph" id="p-ph">Rendering seat view…</div>
-          <div class="pill tl" id="p-score">★ view</div>
-          <div class="pill br">360°</div>
+
+        <div class="score">
+          <div class="score-row">
+            <span class="lb">View Score</span>
+            <button class="score-i" id="score-help" aria-label="How the view score works">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+                <use href="#i-info" />
+              </svg>
+            </button>
+            <b id="p-score">93%</b>
+          </div>
+          <div class="bar"><i id="p-bar"></i></div>
         </div>
-        <div class="benefits" id="benefits">
-          <div class="benefit">
-            <svg
-              class="bicon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M6 11V7a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v4" />
-              <path
-                d="M4 13a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3Z"
-              />
-              <path d="M7 18v2M17 18v2" /></svg
-            ><span class="btxt">Padded seat</span><span class="spacer"></span
-            ><svg class="check" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="12" r="10" opacity=".22" />
-              <path
-                d="m8.2 12.3 2.6 2.6 5-5.3"
-                stroke="#fff"
-                stroke-width="2"
-                fill="none"
-                stroke-linecap="round"
-              />
-            </svg>
-          </div>
-          <div class="benefit">
-            <svg
-              class="bicon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
-              <circle cx="12" cy="12" r="2.8" /></svg
-            ><span class="btxt">Great view</span><span class="spacer"></span
-            ><svg class="check" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="12" r="10" opacity=".22" />
-              <path
-                d="m8.2 12.3 2.6 2.6 5-5.3"
-                stroke="#fff"
-                stroke-width="2"
-                fill="none"
-                stroke-linecap="round"
-              />
-            </svg>
-          </div>
-          <div class="benefit">
-            <svg
-              class="bicon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1.5a2.5 2.5 0 0 0 0 5V16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.5a2.5 2.5 0 0 0 0-5V8Z"
-              />
-              <path d="M13 6v12" stroke-dasharray="2.4 2.4" /></svg
-            ><span class="btxt">Food &amp; drink voucher</span
-            ><span class="spacer"></span
-            ><svg class="check" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="12" r="10" opacity=".22" />
-              <path
-                d="m8.2 12.3 2.6 2.6 5-5.3"
-                stroke="#fff"
-                stroke-width="2"
-                fill="none"
-                stroke-linecap="round"
-              />
-            </svg>
-          </div>
+
+        <div class="chips" id="benefits">
+          <span class="chip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+              <use href="#i-seat" />
+            </svg><span class="btxt">Padded seat</span>
+          </span>
+          <span class="chip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+              <use href="#i-eye" />
+            </svg><span class="btxt">Great view</span>
+          </span>
+          <span class="chip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+              <use href="#i-cup" />
+            </svg><span class="btxt">Food &amp; drink voucher</span>
+          </span>
         </div>
-        <button id="checkout">
-          <span id="checkout-label">Grab seat</span>
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.4"
-          >
-            <path d="M4 12h15M13 6l6 6-6 6" />
+
+        <button id="viewseat">
+          View from this seat
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
+            <use href="#i-arrow-r" />
           </svg>
         </button>
-        <div class="secure">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <rect x="4" y="10" width="16" height="10" rx="2" />
-            <path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg
-          >Concept demo · no real ticket sales
+
+        <div class="card-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <use href="#i-lock" />
+          </svg>
+          Concept demo · no real ticket sales
         </div>
-      </section>
+      </div>
+    </aside>
+
+    <!-- ============ bottom centre · zoom dock ============ -->
+    <div id="dock" role="toolbar" aria-label="View controls">
+      <div class="zoom-pill">
+        <button class="zbtn" id="d-zout" aria-label="Zoom out">−</button>
+        <button id="d-3d" aria-label="Toggle flat overview">3D</button>
+        <button class="zbtn" id="d-zin" aria-label="Zoom in">+</button>
+      </div>
+      <div class="hintline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <use href="#i-mouse" />
+        </svg>
+        Drag to look around
+      </div>
     </div>
 
-    <div id="dock" role="toolbar" aria-label="3D view controls">
-      <button class="dock-btn" id="d-reset" aria-label="Reset orbit">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <circle cx="12" cy="12" r="3.4" />
-          <path
-            d="M20.5 12c0 1.9-3.8 3.5-8.5 3.5S3.5 13.9 3.5 12 7.3 8.5 12 8.5s8.5 1.6 8.5 3.5Z"
-            transform="rotate(-24 12 12)"
-          />
+    <!-- ============ bottom left · status ============ -->
+    <div id="statuspill">
+      <span class="live"><i></i>Live view</span>
+      <span class="sep-v"></span>
+      <span class="loc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+          <use href="#i-pin" />
         </svg>
-      </button>
-      <button class="dock-btn active" id="d-3d" aria-pressed="true">3D</button>
-      <button class="dock-btn" id="d-vr" aria-label="VR mode">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path
-            d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-3.6a2 2 0 0 1-1.6-.8l-.6-.8a2 2 0 0 0-3.2 0l-.6.8a2 2 0 0 1-1.6.8H5a2 2 0 0 1-2-2V8Z"
-          />
-          <circle cx="8.2" cy="11" r="1.2" fill="currentColor" />
-          <circle cx="15.8" cy="11" r="1.2" fill="currentColor" />
-        </svg>
-      </button>
-      <div class="dock-sep"></div>
-      <button class="dock-btn" id="d-zout" aria-label="Zoom out">−</button>
-      <button class="dock-btn" id="d-zin" aria-label="Zoom in">+</button>
+        <span id="venue-name">JLN Stadium</span>
+      </span>
     </div>
 
-    <div id="sb-hint">Drag to look around · scroll to zoom</div>
+    <!-- ============ bottom right · view tools ============ -->
+    <div id="viewtools">
+      <span class="vt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <use href="#i-mouse" />
+        </svg>
+        Drag to rotate
+      </span>
+      <span class="sep-v"></span>
+      <button id="btn-full" aria-label="Toggle fullscreen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+          <use href="#i-full" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- ============ seat view chrome ============ -->
+    <div id="seatbadge" aria-live="polite">
+      <span class="sv-k"><i></i>Seat view</span>
+      <span class="sep-v"></span>
+      <span id="sv-line">Section 125 · Row 12 · Seat 18</span>
+    </div>
+
+    <div id="sb-hint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <use href="#i-mouse" />
+      </svg>
+      Drag to look around · scroll to zoom · Esc to exit
+    </div>
+
     <div id="backbar" role="toolbar" aria-label="Seat view controls">
       <button id="bk-exit">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-        >
-          <path d="M19 12H5M11 6l-6 6 6 6" /></svg
-        >Back to stadium
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
+          <use href="#i-arrow-l" />
+        </svg>
+        Back to stadium
+      </button>
+      <button id="checkout">
+        <span id="checkout-label">Grab seat</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
+          <use href="#i-check" />
+        </svg>
       </button>
       <button id="bk-snd" aria-label="Toggle stadium sound">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path d="M4 9v6h4l5 4V5L8 9H4Z" />
-          <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+          <use href="#i-sound" />
         </svg>
       </button>
     </div>
 
+    <!-- ============ sheets ============ -->
+    <div id="scrim"></div>
+
+    <section id="sheet-seats" class="sheet" aria-label="Seat explorer">
+      <div class="sheet-hd">
+        <div>
+          <h2>Seat explorer</h2>
+          <div class="sub" id="seats-sub">Pick a block to jump to its best free seat</div>
+        </div>
+        <button class="sheet-x" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <use href="#i-x" />
+          </svg>
+        </button>
+      </div>
+      <div class="sheet-bd">
+        <div class="tier-tabs" id="tier-tabs"></div>
+        <div class="explore-note" id="explore-note">
+          Each block shows its best available view score.
+        </div>
+        <div class="sec-grid" id="sec-grid"></div>
+        <button id="best-seat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+            <use href="#i-target" />
+          </svg>
+          Find the best available seat
+        </button>
+      </div>
+    </section>
+
+    <section id="sheet-gallery" class="sheet" aria-label="Seat view gallery">
+      <div class="sheet-hd">
+        <div>
+          <h2>Seat view gallery</h2>
+          <div class="sub">Real renders captured from every seat you preview</div>
+        </div>
+        <button class="sheet-x" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <use href="#i-x" />
+          </svg>
+        </button>
+      </div>
+      <div class="sheet-bd">
+        <div class="gal-hero">
+          <img id="p-img" alt="View from the selected seat" />
+          <div class="ph" id="p-ph">Rendering seat view…</div>
+          <div class="gal-cap">
+            <div>
+              <b id="gal-title">Section 125</b>
+              <span id="gal-sub">Row 12 · Seat 18</span>
+            </div>
+            <span class="gal-badge" id="gal-badge">93% view</span>
+          </div>
+        </div>
+        <div id="gal-strip"></div>
+        <div class="gal-empty" id="gal-empty">
+          Preview more seats to build your gallery — every seat you fly into is
+          rendered and saved here.
+        </div>
+      </div>
+    </section>
+
+    <section id="sheet-info" class="sheet" aria-label="Stadium information">
+      <div class="sheet-hd">
+        <div>
+          <h2 id="info-venue">JLN Stadium</h2>
+          <div class="sub" id="info-match">India vs Pakistan · Live</div>
+        </div>
+        <button class="sheet-x" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <use href="#i-x" />
+          </svg>
+        </button>
+      </div>
+      <div class="sheet-bd">
+        <div class="info-grid" id="info-stats"></div>
+        <div class="info-h">Tiers</div>
+        <div class="info-rows" id="info-tiers"></div>
+        <div class="info-h">Controls</div>
+        <div class="info-rows">
+          <div class="info-row">
+            <span class="n">Rotate the stadium</span><span class="d">Drag</span>
+          </div>
+          <div class="info-row">
+            <span class="n">Zoom</span><span class="d">Scroll · <kbd>+</kbd> <kbd>−</kbd></span>
+          </div>
+          <div class="info-row">
+            <span class="n">Orbit</span
+            ><span class="d"><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></span>
+          </div>
+          <div class="info-row">
+            <span class="n">Preview a seat</span><span class="d">Click a seat</span>
+          </div>
+          <div class="info-row">
+            <span class="n">Leave seat view</span><span class="d"><kbd>Esc</kbd></span>
+          </div>
+          <div class="info-row">
+            <span class="n">Confirm the demo seat</span
+            ><span class="d"><kbd>Enter</kbd></span>
+          </div>
+        </div>
+        <div class="info-h">About this experience</div>
+        <p class="info-p">
+          Every stand, step, floodlight and seat here is generated in code — no
+          imported models, no photographs. The crowd, players, ball and
+          scoreboards are simulated live, and each seat's price and view score
+          are derived from its real position in the bowl.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ overlays ============ -->
     <div id="tip" aria-hidden="true">
       <div class="t1" id="tip1">Section · Row · Seat</div>
       <div class="t2" id="tip2">₹ pending</div>
@@ -3422,6 +4425,19 @@
         };
       }
 
+      /* A taken seat always reroutes the same way, whichever route the user
+   took to it: click, search or the seat explorer. -1 = whole row sold out. */
+      function nearestFreeInRow(idx) {
+        if (meta.avail[idx]) return idx;
+        const rs = meta.rowStart[idx],
+          re = rs + meta.rowCount[idx] - 1;
+        for (let d = 1; d < meta.rowCount[idx]; d++) {
+          if (idx - d >= rs && meta.avail[idx - d]) return idx - d;
+          if (idx + d <= re && meta.avail[idx + d]) return idx + d;
+        }
+        return -1;
+      }
+
       /* featured seat Section 125 · Row 12 · Seat 18 */
       let featuredIdx = -1;
       {
@@ -3558,6 +4574,12 @@
         pImg: $("p-img"),
         pPh: $("p-ph"),
         pScore: $("p-score"),
+        pBar: $("p-bar"),
+        svLine: $("sv-line"),
+        seatbadge: $("seatbadge"),
+        galTitle: $("gal-title"),
+        galSub: $("gal-sub"),
+        galBadge: $("gal-badge"),
         checkout: $("checkout"),
         benefits: document.querySelectorAll("#benefits .btxt"),
         backbar: $("backbar"),
@@ -3567,7 +4589,6 @@
         dock: $("dock"),
         ckLabel: $("checkout-label"),
         seatcard: $("seatcard"),
-        mm: $("mm").getContext("2d"),
         ov: $("ov").getContext("2d"),
         fav: $("fav"),
         d3d: $("d-3d"),
@@ -3666,23 +4687,37 @@
       function updatePanel(info, state) {
         ui.pLabel.textContent =
           state === "confirmed"
-            ? "SEAT CONFIRMED"
+            ? "Seat confirmed"
             : state === "previewing"
-              ? "PREVIEWING SEAT"
-              : "SUGGESTED SEAT";
+              ? "Previewing seat"
+              : state === "selected"
+                ? "Selected seat"
+                : "Suggested seat";
         ui.pSection.textContent = "Section " + info.label;
         ui.pTier.textContent = info.tier;
         ui.pBlock.textContent = "Block " + info.label;
         ui.pRow.textContent = info.row;
         ui.pSeat.textContent = info.seat;
-        ui.pPrice.innerHTML =
-          "₹" + info.price.toLocaleString("en-IN") + ' <span class="unit">/seat</span>';
-        ui.pScore.textContent = "★ " + info.score + "% view";
+        ui.pPrice.textContent = "₹" + info.price.toLocaleString("en-IN");
+        ui.pScore.textContent = info.score + "%";
+        ui.pScore.style.color =
+          info.score >= 82
+            ? "var(--live)"
+            : info.score >= 66
+              ? "#7fd0ff"
+              : "var(--acc)";
+        ui.pBar.style.width = info.score + "%";
         const b = TIER_BENEFITS[info.sec.tier];
         ui.benefits.forEach((el, k) => (el.textContent = b[k]));
         ui.checkout.classList.toggle("done", state === "confirmed");
         ui.ckLabel.textContent =
-          state === "confirmed" ? "Seat secured ✓" : "Grab seat";
+          state === "confirmed" ? "Seat secured" : "Grab seat";
+        const line =
+          "Section " + info.label + " · Row " + info.row + " · Seat " + info.seat;
+        ui.svLine.textContent = line;
+        ui.galTitle.textContent = "Section " + info.label;
+        ui.galSub.textContent = "Row " + info.row + " · Seat " + info.seat;
+        ui.galBadge.textContent = info.score + "% view";
         ui.seatcard.classList.remove("refresh");
         void ui.seatcard.offsetWidth;
         ui.seatcard.classList.add("refresh");
@@ -3718,6 +4753,7 @@
         ui.pImg.src = url;
         ui.pImg.classList.add("ready");
         ui.pPh.style.display = "none";
+        addToGallery(i, url);
       }
 
       /* ---------- crowd audio (synthesised, no assets) ---------- */
@@ -3867,8 +4903,11 @@
         seatView.pitchOff = 0;
         camera.fov = 55;
         camera.updateProjectionMatrix();
+        document.body.classList.add("seatview");
+        closeSheet();
         ui.dock.classList.add("hidden");
         ui.backbar.classList.add("show");
+        ui.seatbadge.classList.add("show");
         ui.sbHint.classList.add("show");
         setTimeout(() => ui.sbHint.classList.remove("show"), 4200);
         setCrowd(0.075);
@@ -3879,9 +4918,13 @@
         if (mode !== "seat") return;
         mode = "fly";
         canvas.classList.remove("seatmode");
+        document.body.classList.remove("seatview");
         ui.backbar.classList.remove("show");
+        ui.seatbadge.classList.remove("show");
         ui.sbHint.classList.remove("show");
         ui.dock.classList.remove("hidden");
+        if (currentInfo)
+          updatePanel(currentInfo, confirmed ? "confirmed" : "selected");
         orbit.theta = orbit.thetaT = lastOrbit.theta;
         orbit.phi = orbit.phiT = lastOrbit.phi;
         orbit.radius = orbit.radiusT = lastOrbit.radius;
@@ -4012,28 +5055,14 @@
         ) {
           const idx = pickAt(e.clientX, e.clientY);
           if (idx >= 0) {
-            if (meta.avail[idx]) flyToSeat(idx);
+            const free = nearestFreeInRow(idx);
+            if (free < 0) toast("That row is sold out. Try another one");
             else {
-              // reroute to the nearest free seat in the same row
-              const rs = meta.rowStart[idx],
-                re = rs + meta.rowCount[idx] - 1;
-              let found = -1;
-              for (let d = 1; d < meta.rowCount[idx]; d++) {
-                if (idx - d >= rs && meta.avail[idx - d]) {
-                  found = idx - d;
-                  break;
-                }
-                if (idx + d <= re && meta.avail[idx + d]) {
-                  found = idx + d;
-                  break;
-                }
-              }
-              if (found >= 0) {
+              if (free !== idx)
                 toast(
                   "That seat is taken. Showing the nearest free one in the row",
                 );
-                flyToSeat(found);
-              } else toast("That row is sold out. Try another one");
+              flyToSeat(free);
             }
           }
         }
@@ -4125,7 +5154,24 @@
           flyToSeat(selectedIdx);
         }
       });
-      ui.fav.addEventListener("click", () => ui.fav.classList.toggle("on"));
+      ui.fav.addEventListener("click", () => {
+        const on = ui.fav.classList.toggle("on");
+        ui.fav.setAttribute("aria-pressed", on ? "true" : "false");
+        if (currentInfo)
+          toast(
+            on
+              ? "Section " +
+                  currentInfo.label +
+                  " · Row " +
+                  currentInfo.row +
+                  " · Seat " +
+                  currentInfo.seat +
+                  " saved to favourites"
+              : "Removed from favourites",
+            2000,
+          );
+      });
+
       function goHome() {
         if (mode === "seat") {
           exitSeatMode();
@@ -4143,53 +5189,575 @@
         is2D = false;
         ui.d3d.textContent = "3D";
       }
-      $("cc-reset").addEventListener("click", goHome);
-      $("d-reset").addEventListener("click", goHome);
-      $("ov-expand").addEventListener("click", goHome);
+
       const zoomBy = (f) => {
         if (mode === "orbit") {
           userInteracted = true;
           orbit.radiusT = THREE.MathUtils.clamp(orbit.radiusT * f, 60, 360);
+        } else if (mode === "seat") {
+          camera.fov = THREE.MathUtils.clamp(camera.fov * f, 28, 68);
+          camera.updateProjectionMatrix();
         }
       };
-      $("cc-zin").addEventListener("click", () => zoomBy(0.86));
-      $("cc-zout").addEventListener("click", () => zoomBy(1.16));
       $("d-zin").addEventListener("click", () => zoomBy(0.86));
       $("d-zout").addEventListener("click", () => zoomBy(1.16));
-      $("cc-help").addEventListener("click", () =>
-        toast(
-          "Drag to rotate · Scroll to zoom · Click any seat to preview its view",
-          3600,
-        ),
-      );
-      $("d-vr").addEventListener("click", () =>
-        toast("VR mode needs a WebXR headset. It is not in this build"),
-      );
       ui.d3d.addEventListener("click", () => {
         if (mode !== "orbit") return;
         userInteracted = true;
         is2D = !is2D;
         ui.d3d.textContent = is2D ? "2D" : "3D";
-        if (is2D)
-          gsap.to(orbit, {
-            phiT: 0.15,
-            radiusT: 300,
-            duration: REDUCED ? 0.1 : 1.1,
-            ease: "power2.inOut",
-          });
-        else
-          gsap.to(orbit, {
-            phiT: HOME.phi,
-            radiusT: HOME.radius,
-            duration: REDUCED ? 0.1 : 1.1,
-            ease: "power2.inOut",
-          });
+        gsap.to(orbit, {
+          phiT: is2D ? 0.15 : HOME.phi,
+          radiusT: is2D ? 300 : HOME.radius,
+          duration: REDUCED ? 0.1 : 1.1,
+          ease: "power2.inOut",
+        });
       });
 
-      /* ---------- minimaps ---------- */
+      $("score-help").addEventListener("click", () =>
+        toast(
+          "View score blends distance to the pitch, halfway-line alignment and seat elevation",
+          4200,
+        ),
+      );
+
+      /* ---------- fullscreen ---------- */
+      $("btn-full").addEventListener("click", () => {
+        const el = document.documentElement;
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          (document.exitFullscreen || document.webkitExitFullscreen).call(
+            document,
+          );
+        } else if (el.requestFullscreen || el.webkitRequestFullscreen) {
+          (el.requestFullscreen || el.webkitRequestFullscreen)
+            .call(el)
+            .catch?.(() => toast("Fullscreen was blocked by the browser"));
+        } else {
+          toast("Fullscreen isn’t available in this browser");
+        }
+      });
+
+      /* ---------- select a seat without a full camera flight ---------- */
+      function focusSeat(i, opts) {
+        const o = opts || {};
+        const info = seatInfo(i);
+        currentInfo = info;
+        confirmed = false;
+        applySelection(i);
+        updatePanel(info, "selected");
+        if (mode === "orbit") {
+          userInteracted = true;
+          // swing the orbit round so the chosen block faces the camera
+          const want = Math.atan2(info.pos.z, info.pos.x);
+          let d = want - orbit.thetaT;
+          while (d > Math.PI) d -= TAU;
+          while (d < -Math.PI) d += TAU;
+          gsap.to(orbit, {
+            thetaT: orbit.thetaT + d,
+            phiT: THREE.MathUtils.clamp(HOME.phi - 0.12, 0.14, 1.46),
+            radiusT: o.radius || 178,
+            duration: REDUCED ? 0.1 : 1.35,
+            ease: "power2.inOut",
+          });
+        }
+        return info;
+      }
+
+      /* ---------- best available seat helpers ---------- */
+      function bestSeatIn(start, count) {
+        let best = -1,
+          bestScore = -1;
+        for (let i = start; i < start + count; i++) {
+          if (!meta.avail[i]) continue;
+          const sc = seatScore(i);
+          if (sc > bestScore) {
+            bestScore = sc;
+            best = i;
+          }
+        }
+        return { i: best, score: bestScore };
+      }
+      const sectionBest = sections.map((s) => bestSeatIn(s.start, s.count));
+
+      /* ==========================================================
+         SHEETS · seat explorer / gallery / info
+         ========================================================== */
+      const scrim = $("scrim");
+      const sheets = {
+        seats: $("sheet-seats"),
+        gallery: $("sheet-gallery"),
+        info: $("sheet-info"),
+      };
+      const railBtns = {
+        explore: $("nav-explore"),
+        seats: $("nav-seats"),
+        gallery: $("nav-gallery"),
+        info: $("nav-info"),
+      };
+      let activeMode = "explore";
+
+      function setRail(name) {
+        activeMode = name;
+        for (const k in railBtns) {
+          const on = k === name;
+          railBtns[k].classList.toggle("active", on);
+          railBtns[k].setAttribute("aria-pressed", on ? "true" : "false");
+        }
+      }
+      function closeSheet() {
+        for (const k in sheets) sheets[k].classList.remove("show");
+        scrim.classList.remove("show");
+      }
+      function openSheet(name) {
+        closeSheet();
+        const el = sheets[name];
+        if (!el) return;
+        el.classList.add("show");
+        if (name === "gallery") scrim.classList.add("show");
+        if (!REDUCED)
+          gsap.fromTo(
+            el,
+            { opacity: 0, y: 10 },
+            { opacity: 1, y: 0, duration: 0.34, ease: "power2.out" },
+          );
+      }
+      scrim.addEventListener("click", () => {
+        closeSheet();
+        setRail("explore");
+      });
+      document.querySelectorAll("[data-close]").forEach((b) =>
+        b.addEventListener("click", () => {
+          closeSheet();
+          setRail("explore");
+        }),
+      );
+
+      railBtns.explore.addEventListener("click", () => {
+        setRail("explore");
+        closeSheet();
+        goHome();
+        toast("Back to the full stadium view", 1800);
+      });
+      railBtns.seats.addEventListener("click", () => {
+        if (activeMode === "seats") {
+          closeSheet();
+          setRail("explore");
+          return;
+        }
+        setRail("seats");
+        buildSecGrid();
+        openSheet("seats");
+        if (mode === "seat") exitSeatMode();
+      });
+      railBtns.gallery.addEventListener("click", () => {
+        if (activeMode === "gallery") {
+          closeSheet();
+          setRail("explore");
+          return;
+        }
+        setRail("gallery");
+        // render the seat the panel is currently describing, so the hero image
+        // and its caption always agree
+        if (currentInfo) captureView(currentInfo.i);
+        renderGallery();
+        openSheet("gallery");
+      });
+      railBtns.info.addEventListener("click", () => {
+        if (activeMode === "info") {
+          closeSheet();
+          setRail("explore");
+          return;
+        }
+        setRail("info");
+        buildInfo();
+        openSheet("info");
+      });
+
+      /* ---------- seat explorer ---------- */
+      let explorerTier = 0;
+      {
+        const tt = $("tier-tabs");
+        TIERS.forEach((t, i) => {
+          const b = document.createElement("button");
+          b.className = "tier-tab" + (i === 0 ? " active" : "");
+          b.textContent = t.name;
+          b.addEventListener("click", () => {
+            explorerTier = i;
+            tt.querySelectorAll(".tier-tab").forEach((x, k) =>
+              x.classList.toggle("active", k === i),
+            );
+            buildSecGrid();
+          });
+          tt.appendChild(b);
+        });
+      }
+      function buildSecGrid() {
+        const g = $("sec-grid");
+        g.innerHTML = "";
+        const selSec = selectedIdx >= 0 ? meta.secIdx[selectedIdx] : -1;
+        sections.forEach((s, si) => {
+          if (s.tier !== explorerTier) return;
+          const best = sectionBest[si];
+          const b = document.createElement("button");
+          b.className =
+            "sec-btn" +
+            (si === selSec ? " on" : "") +
+            (best.i < 0 ? " soldout" : "");
+          b.innerHTML =
+            "<b>" +
+            s.label +
+            "</b><span>" +
+            (best.i < 0 ? "sold out" : best.score + "% view") +
+            "</span>";
+          b.addEventListener("click", () => {
+            if (best.i < 0) {
+              toast("Block " + s.label + " is sold out. Try a neighbour");
+              return;
+            }
+            const info = focusSeat(best.i);
+            buildSecGrid();
+            toast(
+              "Best free seat in block " +
+                s.label +
+                ": Row " +
+                info.row +
+                " · Seat " +
+                info.seat,
+              2600,
+            );
+          });
+          g.appendChild(b);
+        });
+        const tier = TIERS[explorerTier];
+        const open = sections.reduce(
+          (n, s, si) =>
+            s.tier === explorerTier && sectionBest[si].i >= 0 ? n + 1 : n,
+          0,
+        );
+        $("seats-sub").textContent =
+          tier.name + " · " + tier.rows + " rows · " + open + " blocks open";
+      }
+      $("best-seat").addEventListener("click", () => {
+        let best = -1,
+          bestScore = -1;
+        sectionBest.forEach((b) => {
+          if (b.score > bestScore) {
+            bestScore = b.score;
+            best = b.i;
+          }
+        });
+        if (best < 0) {
+          toast("Every seat is taken");
+          return;
+        }
+        explorerTier = sections[meta.secIdx[best]].tier;
+        $("tier-tabs")
+          .querySelectorAll(".tier-tab")
+          .forEach((x, k) => x.classList.toggle("active", k === explorerTier));
+        const info = focusSeat(best);
+        buildSecGrid();
+        toast(
+          "Best seat in the house: Section " +
+            info.label +
+            " · Row " +
+            info.row +
+            " · Seat " +
+            info.seat +
+            " · " +
+            info.score +
+            "% view",
+          3400,
+        );
+      });
+
+      /* ---------- gallery (built from real POV captures) ---------- */
+      const gallery = [];
+      function addToGallery(i, url) {
+        if (gallery.some((g) => g.i === i)) return;
+        const info = seatInfo(i);
+        gallery.unshift({
+          i,
+          url,
+          label: info.label,
+          row: info.row,
+          seat: info.seat,
+          score: info.score,
+        });
+        if (gallery.length > 12) gallery.pop();
+        if (sheets.gallery.classList.contains("show")) renderGallery();
+      }
+      function renderGallery() {
+        const strip = $("gal-strip");
+        strip.innerHTML = "";
+        $("gal-empty").style.display = gallery.length > 1 ? "none" : "block";
+        gallery.forEach((g) => {
+          const b = document.createElement("button");
+          b.className =
+            "gal-thumb" + (currentInfo && g.i === currentInfo.i ? " on" : "");
+          b.innerHTML =
+            '<img alt="View from section ' +
+            g.label +
+            ' row ' +
+            g.row +
+            ' seat ' +
+            g.seat +
+            '" src="' +
+            g.url +
+            '"><span class="tl">Sec ' +
+            g.label +
+            " · R" +
+            g.row +
+            " S" +
+            g.seat +
+            "</span>";
+          b.addEventListener("click", () => {
+            ui.pImg.src = g.url;
+            ui.pImg.classList.add("ready");
+            ui.pPh.style.display = "none";
+            focusSeat(g.i);
+            renderGallery();
+          });
+          strip.appendChild(b);
+        });
+      }
+
+      /* ---------- info panel (real numbers from the build) ---------- */
+      function buildInfo() {
+        const soldOut = (() => {
+          let n = 0;
+          for (let i = 0; i < SEAT_COUNT; i++) if (!meta.avail[i]) n++;
+          return n;
+        })();
+        const stats = [
+          ["Seats placed", SEAT_COUNT.toLocaleString("en-IN")],
+          ["Blocks", sections.length],
+          ["Tiers", TIERS.length],
+          [
+            "Seats free",
+            (SEAT_COUNT - soldOut).toLocaleString("en-IN"),
+          ],
+        ];
+        $("info-stats").innerHTML = stats
+          .map(
+            (s) =>
+              '<div class="info-stat"><div class="k">' +
+              s[0] +
+              '</div><div class="v">' +
+              s[1] +
+              "</div></div>",
+          )
+          .join("");
+        $("info-tiers").innerHTML = TIERS.map((t, i) => {
+          const secs = sections.filter((s) => s.tier === i);
+          const seats = secs.reduce((n, s) => n + s.count, 0);
+          return (
+            '<div class="info-row"><span class="n">' +
+            t.name +
+            '</span><span class="d">' +
+            secs.length +
+            " blocks · " +
+            seats.toLocaleString("en-IN") +
+            " seats</span></div>"
+          );
+        }).join("");
+      }
+      buildInfo();
+
+      /* ---------- top tabs (visual sections of the concept) ---------- */
+      const TAB_NOTE = {
+        stadium: null,
+        tickets: "Ticketing is a concept demo — pick a seat and grab it to try the flow",
+        teams: "India vs Pakistan at JLN Stadium · kick-off simulated live on the pitch",
+        experience:
+          "Fly into any seat for the first-person view, then drag to look around the ground",
+      };
+      document.querySelectorAll(".tab").forEach((t) =>
+        t.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab")
+            .forEach((x) => x.classList.remove("active"));
+          t.classList.add("active");
+          const note = TAB_NOTE[t.dataset.tab];
+          if (note) toast(note, 3400);
+          else goHome();
+        }),
+      );
+      $("user-btn").addEventListener("click", () =>
+        toast("Accounts aren’t part of this concept build", 2400),
+      );
+
+      /* ---------- search · section / row / seat ---------- */
+      const qEl = $("q"),
+        qWrap = $("search"),
+        qRes = $("q-res");
+      function parseQuery(raw) {
+        const nums = (raw.match(/\d+/g) || []).map(Number);
+        return { nums, text: raw.trim().toLowerCase() };
+      }
+      function findSeat(secIdx, row, seat) {
+        const s = sections[secIdx];
+        let fallback = -1;
+        for (let i = s.start; i < s.start + s.count; i++) {
+          if (row != null && meta.row[i] !== row) continue;
+          if (seat != null && meta.seatNum[i] !== seat) {
+            if (fallback < 0 && meta.avail[i]) fallback = i;
+            continue;
+          }
+          return i;
+        }
+        return fallback >= 0 ? fallback : sectionBest[secIdx].i;
+      }
+      function runSearch() {
+        const { nums, text } = parseQuery(qEl.value);
+        qWrap.classList.toggle("filled", text.length > 0);
+        if (!text) {
+          qRes.classList.remove("show");
+          return;
+        }
+        const matches = [];
+        sections.forEach((s, si) => {
+          const label = String(s.label);
+          const tierName = TIERS[s.tier].name.toLowerCase();
+          const hit =
+            (nums.length && label.startsWith(String(nums[0]))) ||
+            tierName.includes(text) ||
+            label.includes(text);
+          if (hit) matches.push(si);
+        });
+        matches.sort((a, b) => sections[a].label - sections[b].label);
+        const row = nums.length > 1 ? nums[1] : null;
+        const seat = nums.length > 2 ? nums[2] : null;
+
+        if (!matches.length) {
+          qRes.innerHTML =
+            '<div class="q-empty">No block matches “' +
+            qEl.value.replace(/[<>&]/g, "") +
+            '”. Try 125, or “upper tier”.</div>';
+          qRes.classList.add("show");
+          return;
+        }
+        qRes.innerHTML = "";
+        matches.slice(0, 8).forEach((si) => {
+          const s = sections[si];
+          const idx = findSeat(si, row, seat);
+          if (idx < 0) return;
+          const info = seatInfo(idx);
+          const b = document.createElement("button");
+          b.className = "qr";
+          b.type = "button";
+          b.innerHTML =
+            '<span class="qr-n">' +
+            s.label +
+            '</span><span class="qr-m"><b>Row ' +
+            info.row +
+            " · Seat " +
+            info.seat +
+            '</b><span>' +
+            info.tier +
+            " · " +
+            info.score +
+            "% view" +
+            (info.avail ? "" : " · taken") +
+            '</span></span><span class="qr-p">₹' +
+            info.price.toLocaleString("en-IN") +
+            "</span>";
+          b.addEventListener("click", () => {
+            qRes.classList.remove("show");
+            qEl.blur();
+            const free = nearestFreeInRow(idx);
+            if (free < 0) {
+              toast("Row " + info.row + " in block " + s.label + " is sold out");
+              return;
+            }
+            if (free !== idx)
+              toast("That seat is taken. Showing the nearest free one in the row");
+            if (mode === "seat") exitSeatMode();
+            focusSeat(free);
+          });
+          qRes.appendChild(b);
+        });
+        qRes.classList.add("show");
+      }
+      qEl.addEventListener("input", runSearch);
+      qEl.addEventListener("focus", () => {
+        if (qEl.value.trim()) runSearch();
+      });
+      qEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const first = qRes.querySelector(".qr");
+          if (first) first.click();
+        }
+        if (e.key === "Escape") {
+          qRes.classList.remove("show");
+          qEl.blur();
+        }
+        e.stopPropagation();
+      });
+      $("q-clear").addEventListener("click", () => {
+        qEl.value = "";
+        qWrap.classList.remove("filled");
+        qRes.classList.remove("show");
+        qEl.focus();
+      });
+      // compact screens: the search collapses to an icon until tapped
+      qWrap.addEventListener("click", (e) => {
+        if (innerWidth <= 900 && !qWrap.classList.contains("open")) {
+          qWrap.classList.add("open");
+          qEl.focus();
+          e.stopPropagation();
+        }
+      });
+      addEventListener("pointerdown", (e) => {
+        if (!qWrap.contains(e.target)) {
+          qRes.classList.remove("show");
+          if (!qEl.value.trim()) qWrap.classList.remove("open");
+        }
+      });
+
+      /* ---------- primary CTA · reuses the existing seat flight ---------- */
+      $("viewseat").addEventListener("click", () => {
+        if (mode === "seat") {
+          toast("You’re already in this seat. Drag to look around", 2200);
+          return;
+        }
+        if (mode !== "orbit") return;
+        const i = selectedIdx >= 0 ? selectedIdx : featuredIdx;
+        closeSheet();
+        setRail("explore");
+        flyToSeat(i);
+      });
+
+      /* ---------- compact screens: the panel is a collapsible bottom sheet ----
+   It starts compact so the stadium keeps most of a small viewport, until the
+   viewer opens it themselves — after that their choice sticks. */
+      const cardToggle = $("card-toggle");
+      let cardUserSet = false;
+      function syncCompactPanel() {
+        if (innerWidth > 900) {
+          ui.seatcard.classList.remove("collapsed");
+          return;
+        }
+        if (!cardUserSet) ui.seatcard.classList.add("collapsed");
+      }
+      cardToggle.addEventListener("click", () => {
+        cardUserSet = true;
+        const c = ui.seatcard.classList.toggle("collapsed");
+        cardToggle.setAttribute(
+          "aria-label",
+          c ? "Expand seat panel" : "Collapse seat panel",
+        );
+        cardToggle.setAttribute("aria-expanded", c ? "false" : "true");
+      });
+      addEventListener("resize", syncCompactPanel);
+      syncCompactPanel();
+
+      /* ---------- stadium overview minimap (right panel) ----------
+   Two layers: a cached base (blocks + pitch, redrawn only when the
+   selection changes) and a live layer (seat marker + camera bearing). */
       const ovBase = document.createElement("canvas");
       const RXmax = TIERS[2].rxTop + 3,
         RZmax = TIERS[2].rzTop + 3;
+
       function drawOverviewBase() {
         const cv = ui.ov.canvas;
         ovBase.width = cv.width;
@@ -4199,17 +5767,36 @@
           H = cv.height,
           cx = W / 2,
           cy = H / 2;
-        const sc = Math.min((W - 24) / (2 * RXmax), (H - 16) / (2 * RZmax));
+        // fill the width, then foreshorten the depth axis so the bowl reads
+        // as a plan view seen from slightly above rather than dead flat
+        let sx = (W - 36) / (2 * RXmax);
+        let sz = sx * 0.78;
+        const maxSz = (H - 30) / (2 * RZmax);
+        if (sz > maxSz) {
+          sz = maxSz;
+          sx = Math.min(sx, sz / 0.78);
+        }
         x.clearRect(0, 0, W, H);
+
         const selSec = selectedIdx >= 0 ? meta.secIdx[selectedIdx] : -1;
+        const selTier = selSec >= 0 ? sections[selSec].tier : -1;
+        const selLabel = selSec >= 0 ? sections[selSec].label : -1;
+
+        // outer bowl outline
+        x.beginPath();
+        x.ellipse(cx, cy, (RXmax + 3) * sx, (RZmax + 3) * sz, 0, 0, TAU);
+        x.strokeStyle = "rgba(255,255,255,.10)";
+        x.lineWidth = 1;
+        x.stroke();
+
         sections.forEach((s, si) => {
           const t = TIERS[s.tier];
           const a0 = s.a0,
             a1 = s.a1;
-          const r0x = t.rx * sc,
-            r0z = t.rz * sc,
-            r1x = t.rxTop * sc,
-            r1z = t.rzTop * sc;
+          const r0x = t.rx * sx,
+            r0z = t.rz * sz,
+            r1x = t.rxTop * sx,
+            r1z = t.rzTop * sz;
           x.beginPath();
           for (let k = 0; k <= 8; k++) {
             const a = a0 + ((a1 - a0) * k) / 8;
@@ -4222,157 +5809,138 @@
             x.lineTo(cx + r1x * Math.cos(a), cy + r1z * Math.sin(a));
           }
           x.closePath();
+
           if (si === selSec) {
-            x.fillStyle = "rgba(57,196,255,.9)";
-          } else {
-            const c = sectionBaseColor(t, s.label - t.first);
+            x.fillStyle = "#2f7bff";
+            x.shadowColor = "rgba(47,123,255,.9)";
+            x.shadowBlur = 14;
+          } else if (
+            s.tier === selTier &&
+            Math.abs(s.label - selLabel) <= 2
+          ) {
+            // neighbouring blocks in the same tier read as the wider zone
             x.fillStyle =
-              "rgba(" +
-              ((c.r * 255) | 0) +
-              "," +
-              ((c.g * 255) | 0) +
-              "," +
-              ((c.b * 255) | 0) +
-              "," +
-              (s.tier === 0 ? 0.85 : 0.55) +
-              ")";
+              Math.abs(s.label - selLabel) === 1
+                ? "rgba(47,123,255,.52)"
+                : "rgba(47,123,255,.28)";
+            x.shadowBlur = 0;
+          } else {
+            x.fillStyle =
+              s.tier === 0
+                ? "rgba(163,188,218,.34)"
+                : s.tier === 1
+                  ? "rgba(143,170,204,.26)"
+                  : "rgba(124,152,188,.20)";
+            x.shadowBlur = 0;
           }
           x.fill();
-          x.strokeStyle = "rgba(4,7,13,.9)";
+          x.shadowBlur = 0;
+          x.strokeStyle = "rgba(8,14,26,.85)";
           x.lineWidth = 1;
           x.stroke();
         });
+
         // pitch
-        const pw = FIELD.L * sc,
-          ph = FIELD.W * sc;
-        x.fillStyle = "#15602a";
+        const pw = FIELD.L * sx,
+          ph = FIELD.W * sz;
+        const g = x.createLinearGradient(0, cy - ph / 2, 0, cy + ph / 2);
+        g.addColorStop(0, "#1c5c31");
+        g.addColorStop(1, "#134022");
+        x.fillStyle = g;
         x.fillRect(cx - pw / 2, cy - ph / 2, pw, ph);
-        x.strokeStyle = "rgba(240,250,255,.75)";
+        x.strokeStyle = "rgba(228,244,255,.5)";
         x.lineWidth = 1;
-        x.strokeRect(cx - pw / 2 + 2, cy - ph / 2 + 2, pw - 4, ph - 4);
-        x.beginPath();
-        x.moveTo(cx, cy - ph / 2 + 2);
-        x.lineTo(cx, cy + ph / 2 - 2);
-        x.stroke();
-        x.beginPath();
-        x.arc(cx, cy, ph * 0.13, 0, TAU);
-        x.stroke();
-        ui._ovScale = sc;
-      }
-      function drawOverview() {
-        const x = ui.ov,
-          W = x.canvas.width,
-          H = x.canvas.height,
-          cx = W / 2,
-          cy = H / 2,
-          sc = ui._ovScale;
-        x.clearRect(0, 0, W, H);
-        x.drawImage(ovBase, 0, 0);
-        if (selectedIdx >= 0) {
-          const px = cx + meta.pos[selectedIdx * 3] * sc,
-            py = cy + meta.pos[selectedIdx * 3 + 2] * sc;
-          x.beginPath();
-          x.arc(px, py, 4, 0, TAU);
-          x.fillStyle = "#eaffff";
-          x.fill();
-          x.beginPath();
-          x.arc(px, py, 8, 0, TAU);
-          x.strokeStyle = "rgba(57,196,255,.9)";
-          x.lineWidth = 2;
-          x.stroke();
-          const s = sections[meta.secIdx[selectedIdx]];
-          x.font = "700 15px " + getComputedStyle(document.body).fontFamily;
-          x.fillStyle = "#dff4ff";
-          x.textAlign = "center";
-          x.fillText(s.label, px, py - 14);
-        }
-      }
-      function drawMiniMap() {
-        const x = ui.mm,
-          W = x.canvas.width,
-          H = x.canvas.height,
-          cx = W / 2,
-          cy = H / 2;
-        const sc = Math.min((W - 30) / (2 * RXmax), (H - 24) / (2 * RZmax));
-        x.clearRect(0, 0, W, H);
-        // tier rings
-        TIERS.forEach((t, i) => {
-          x.beginPath();
-          x.ellipse(
-            cx,
-            cy,
-            ((t.rx + t.rxTop) / 2) * sc,
-            ((t.rz + t.rzTop) / 2) * sc,
-            0,
-            0,
-            TAU,
-          );
-          x.lineWidth = (t.rxTop - t.rx) * sc;
-          x.strokeStyle = [
-            "rgba(90,80,190,.55)",
-            "rgba(60,100,190,.5)",
-            "rgba(45,60,130,.5)",
-          ][i];
-          x.stroke();
-        });
-        const pw = FIELD.L * sc,
-          ph = FIELD.W * sc;
-        x.fillStyle = "#187031";
-        x.fillRect(cx - pw / 2, cy - ph / 2, pw, ph);
-        x.strokeStyle = "rgba(235,248,255,.8)";
-        x.lineWidth = 1.5;
         x.strokeRect(cx - pw / 2 + 3, cy - ph / 2 + 3, pw - 6, ph - 6);
         x.beginPath();
         x.moveTo(cx, cy - ph / 2 + 3);
         x.lineTo(cx, cy + ph / 2 - 3);
         x.stroke();
         x.beginPath();
-        x.arc(cx, cy, ph * 0.14, 0, TAU);
+        x.ellipse(cx, cy, FIELD.W * 0.14 * sx, FIELD.W * 0.14 * sz, 0, 0, TAU);
         x.stroke();
-        // selected seat
-        if (selectedIdx >= 0) {
-          const px = cx + meta.pos[selectedIdx * 3] * sc,
-            py = cy + meta.pos[selectedIdx * 3 + 2] * sc;
-          x.beginPath();
-          x.arc(px, py, 4, 0, TAU);
-          x.fillStyle = "#67e8f9";
-          x.fill();
-        }
-        // camera indicator
+
+        ui._ovSX = sx;
+        ui._ovSZ = sz;
+      }
+
+      function drawOverview() {
+        const x = ui.ov,
+          W = x.canvas.width,
+          H = x.canvas.height,
+          cx = W / 2,
+          cy = H / 2,
+          sx = ui._ovSX,
+          sz = ui._ovSZ;
+        x.clearRect(0, 0, W, H);
+        x.drawImage(ovBase, 0, 0);
+
+        // camera bearing indicator
         const camA = Math.atan2(
           camera.position.z / RZmax,
           camera.position.x / RXmax,
         );
         const camD = Math.min(
-          1.25,
+          1.3,
           Math.hypot(camera.position.x / RXmax, camera.position.z / RZmax),
         );
-        const px = cx + Math.cos(camA) * camD * RXmax * sc,
-          py = cy + Math.sin(camA) * camD * RZmax * sc;
+        const kx = cx + Math.cos(camA) * camD * RXmax * sx,
+          ky = cy + Math.sin(camA) * camD * RZmax * sz;
         x.beginPath();
-        x.moveTo(px, py);
+        x.moveTo(kx, ky);
         x.lineTo(cx, cy);
-        x.strokeStyle = "rgba(57,196,255,.35)";
-        x.lineWidth = 2;
+        x.strokeStyle = "rgba(47,123,255,.22)";
+        x.lineWidth = 1.5;
+        x.setLineDash([4, 5]);
         x.stroke();
+        x.setLineDash([]);
         x.beginPath();
-        x.arc(px, py, 9, 0, TAU);
-        x.fillStyle = "#2f9bff";
+        x.arc(kx, ky, 5.5, 0, TAU);
+        x.fillStyle = "rgba(11,18,32,.9)";
         x.fill();
-        x.beginPath();
-        x.arc(px, py, 9, 0, TAU);
-        x.strokeStyle = "rgba(255,255,255,.85)";
-        x.lineWidth = 2;
+        x.strokeStyle = "rgba(47,123,255,.85)";
+        x.lineWidth = 1.6;
         x.stroke();
-        // tiny camera glyph
-        x.fillStyle = "#fff";
-        x.fillRect(px - 4, py - 2.5, 6, 5);
-        x.beginPath();
-        x.moveTo(px + 2, py);
-        x.lineTo(px + 5, py - 2.5);
-        x.lineTo(px + 5, py + 2.5);
-        x.closePath();
-        x.fill();
+
+        // selected seat marker
+        if (selectedIdx >= 0) {
+          const px = cx + meta.pos[selectedIdx * 3] * sx,
+            py = cy + meta.pos[selectedIdx * 3 + 2] * sz;
+          x.beginPath();
+          x.arc(px, py, 13, 0, TAU);
+          x.fillStyle = "rgba(47,123,255,.16)";
+          x.fill();
+          x.beginPath();
+          x.arc(px, py, 7.5, 0, TAU);
+          x.strokeStyle = "rgba(160,205,255,.9)";
+          x.lineWidth = 1.6;
+          x.stroke();
+          x.beginPath();
+          x.arc(px, py, 3.4, 0, TAU);
+          x.fillStyle = "#ffffff";
+          x.shadowColor = "rgba(47,123,255,.95)";
+          x.shadowBlur = 10;
+          x.fill();
+          x.shadowBlur = 0;
+
+          const s = sections[meta.secIdx[selectedIdx]];
+          const tx = String(s.label);
+          x.font = '700 15px Inter, system-ui, sans-serif';
+          x.textAlign = "center";
+          x.textBaseline = "middle";
+          const tw = x.measureText(tx).width + 14;
+          const ly = py - 22;
+          x.beginPath();
+          if (x.roundRect) x.roundRect(px - tw / 2, ly - 9, tw, 18, 9);
+          else x.rect(px - tw / 2, ly - 9, tw, 18);
+          x.fillStyle = "rgba(8,14,26,.86)";
+          x.fill();
+          x.strokeStyle = "rgba(47,123,255,.55)";
+          x.lineWidth = 1;
+          x.stroke();
+          x.fillStyle = "#eaf3ff";
+          x.fillText(tx, px, ly + 1);
+          x.textBaseline = "alphabetic";
+        }
       }
 
       /* ---------- hover picking (throttled) ---------- */
@@ -4587,7 +6155,6 @@
           const gs = 2.3 + 0.35 * Math.sin(t * 2.6);
           selGlow.scale.set(gs, gs, 1);
         } else selGlow.material.opacity = 0;
-        drawMiniMap();
         drawOverview();
         adaptQuality(dt, now);
         renderer.render(scene, camera);
@@ -4596,9 +6163,37 @@
           setTimeout(() => {
             captureView(featuredIdx);
             document.getElementById("loader").classList.add("hide");
+            revealUI();
             toast("Click any seat to see the match from it", 3800);
           }, 60);
         }
+      }
+
+      /* ---------- entrance ---------- */
+      function revealUI() {
+        if (REDUCED) return;
+        const from = (el, vars) =>
+          gsap.from(el, { ...vars, ease: "power3.out", clearProps: "all" });
+        gsap
+          .timeline({ delay: 0.12 })
+          .add(from("#topbar", { opacity: 0, y: -22, duration: 0.6 }))
+          .add(
+            from("#rail", { opacity: 0, x: -26, duration: 0.6 }),
+            "-=0.42",
+          )
+          .add(
+            from("#seatcard", { opacity: 0, x: 30, duration: 0.7 }),
+            "-=0.5",
+          )
+          .add(
+            from("#dock, #statuspill, #viewtools", {
+              opacity: 0,
+              y: 20,
+              duration: 0.55,
+              stagger: 0.06,
+            }),
+            "-=0.5",
+          );
       }
 
       /* ---------- boot ---------- */

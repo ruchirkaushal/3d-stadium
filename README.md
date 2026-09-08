@@ -11,7 +11,8 @@ An interactive, procedural 3D football stadium concept. Explore the stadium, sel
 - Animated camera flights and first-person seat view perspective
 - Interactive seat pricing, availability, tiers, blocks, and benefits preview
 - Animated pitch action, lighting, scoreboards, and pitch side displays
-- Stadium overview, mini map, orbit controls, and keyboard support
+- Live stadium overview minimap, orbit controls, and keyboard support
+- Seat explorer, section/row/seat search, and a gallery of captured seat views
 
 ## Getting Started
 
